@@ -16,3 +16,7 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
+
+require plugin_dir_path(__FILE__) . 'settings.php';
+require plugin_dir_path(__FILE__) . 'public/functions.php';
+require plugin_dir_path(__FILE__) . 'admin/functions.php';
