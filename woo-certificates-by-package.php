@@ -8,7 +8,7 @@
  * Author URI:        https://edusof.com
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
- * Text Domain:       woo-certificates-by-package
+ * Text Domain:       woocertificatespackage
  * Domain Path:       /languages
  */
 
