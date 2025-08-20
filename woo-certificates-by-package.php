@@ -17,6 +17,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+define( 'WCBP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+
 require plugin_dir_path(__FILE__) . 'settings.php';
 require plugin_dir_path(__FILE__) . 'public/functions.php';
 require plugin_dir_path(__FILE__) . 'admin/functions.php';
