@@ -1,21 +1,23 @@
 <div class="woocommerce-certificates-page">
-    <h2><?= __( 'Mis Certificados', 'woocertificatespackage' ); ?></h2>
-    <p><?= __( 'Aquí encontrarás una lista de todos tus certificados disponibles.', 'woocertificatespackage' ); ?></p>
+    <h2><?= __('My Certificates', 'woocertificatespackage'); ?></h2>
+    <p><?= __('Here you will find a list of all your available certificates.', 'woocertificatespackage'); ?></p>
 
-    <?php if ( ! empty( $certificates ) ) : ?>
-        <ul class="wcbp-certificates-list">
-        <?php foreach ( $certificates as $certificate ) : ?>
-            <li class="wcbp-certificate-item">
-                <h3><?php echo esc_html( $certificate['product_name'] ); ?></h3>
-                <p><?= __( 'Haz clic en el enlace para ver tu certificado.', 'woocertificatespackage' ); ?></p>
-                <a href="<?php echo home_url( '/certificado/' . $certificate['order_id'] ); ?>" class="button wcbp-certificate-link">
-                    <?= __( 'Ver Certificado', 'woocertificatespackage' ); ?>
+    <?php if (!empty($certificates)) : ?>
+        <ul class="woocerti-certificates-list">
+        <?php foreach ($certificates as $certificate) : ?>
+            <li class="woocerti-certificate-item">
+                <h3><?php echo esc_html($certificate['product_name']); ?></h3>
+                <p><?= __('Click the link to view your certificate.', 'woocertificatespackage'); ?></p>
+                <a href="<?php echo home_url('/certificado/'.$certificate['order_id']); ?>" class="button woocerti-certificate-link">
+                    <?= __('View Certificate', 'woocertificatespackage'); ?>
                 </a>
             </li>
         <?php endforeach; ?>
         </ul>
     <?php else : ?>
-        <p><?= __( 'Aún no tienes certificados disponibles.', 'woocertificatespackage' ); ?></p>
+        <p><?= __('You do not have any certificates available yet.', 'woocertificatespackage'); ?></p>
+        <a href="<?= esc_url(home_url('/shop')); ?>" class="button wc-backward">
+            <?= __('Buy Certificates', 'woocertificatespackage'); ?>
+        </a>
     <?php endif; ?>
-
 </div>

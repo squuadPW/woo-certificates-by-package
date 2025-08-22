@@ -1,77 +1,118 @@
-<?php 
-function woocerti_plugin_scripts(){
-     $version = VERSIONS_ES;
-     wp_enqueue_style('woo-certi-style', plugins_url('woo-certificates-by-package') . '/public/assets/css/style.css', array(), $version, 'all');
-     wp_enqueue_script('woo-certi-js', plugins_url('woo-certificates-by-package') . '/public/assets/js/main.js',array('jquery'), $version, true);
+<?php
+// If this file is called directly, abort.
+if (!defined('ABSPATH')) {
+	exit;
 }
 
-add_action('wp_enqueue_scripts', 'woocerti_plugin_scripts');
+/**
+ * Class to handle the public-facing side of the plugin.
+ */
+class Woocerti_Public {
 
-function woocerti_link( $menu_links ) {
-	$menu_links = array_slice( $menu_links, 0, 5, true ) 
-	+ array( 'certificates' => __('Certificates','woocertificatespackage') )
-	+ array_slice( $menu_links, 5, NULL, true );
-	return $menu_links;
-}
+    /**
+     * Constructor.
+     */
+    public function __construct() {
+        // Enqueue scripts and styles.
+        add_action('wp_enqueue_scripts', array($this, 'enqueue_public_assets'));
 
-add_filter ( 'woocommerce_account_menu_items', 'woocerti_link', 40 );
+        // Add 'Certificates' link to WooCommerce 'My Account' menu.
+        add_filter('woocommerce_account_menu_items', array($this, 'add_certificates_link'), 40);
 
-// register permalink endpoint
-function woocerti_add_endpoint() {
-	add_rewrite_endpoint( 'certificates', EP_PAGES );
-}
-add_action( 'init', 'woocerti_add_endpoint' );
+        // Register the new endpoint for the 'Certificates' page.
+        add_action('init', array($this, 'add_certificates_endpoint'));
 
-// content for the new page in My Account, woocommerce_account_{ENDPOINT NAME}_endpoint
-function woocerti_my_account_endpoint_content() {
-    if ( ! is_user_logged_in() ) {
-        return;
+        // Render content for the 'Certificates' endpoint.
+        add_action('woocommerce_account_certificates_endpoint', array($this, 'render_certificates_content'));
     }
 
-    $certificate_slug = 'certificado-academico-virtual';
-    $certificate_product_id = get_page_by_path( $certificate_slug, OBJECT, 'product' )->ID;
+    /**
+     * Enqueues public-facing CSS and JavaScript files.
+     */
+    public function enqueue_public_assets() {
+        // Use the asset version defined in settings.php.
+        $version = WOOCERTI_VERSION_ASSETS;
 
-    if ( ! $certificate_product_id ) {
-        echo '<p>' . __( 'El producto de certificado no pudo ser encontrado.', 'woocertificatespackage' ) . '</p>';
-        return;
+        // Enqueue CSS file.
+        wp_enqueue_style('woocerti-public-style', WOOCERTI_PLUGIN_URL.'public/assets/css/style.css', array(), $version, 'all');
+
+        // Enqueue JS file.
+        wp_enqueue_script('woocerti-public-script', WOOCERTI_PLUGIN_URL.'public/assets/js/main.js', array('jquery'), $version, true);
     }
 
-    $user_id = get_current_user_id();
+    /**
+     * Adds a 'Certificates' link to the WooCommerce account menu.
+     *
+     * @param array $menu_links Existing menu links.
+     * @return array Modified menu links.
+     */
+    public function add_certificates_link($menu_links) {
+        $new_link = array('certificates' => __('Certificates', 'woocertificatespackage'));
+        $new_menu_links = array_slice($menu_links, 0, 5, true)
+                        + $new_link
+                        + array_slice($menu_links, 5, null, true);
+        return $new_menu_links;
+    }
 
-    // Obtener los pedidos completados del usuario.
-    $customer_orders = wc_get_orders( array(
-        'customer' => $user_id,
-        'status'   => 'completed',
-        'limit'    => -1,
-    ) );
+    /**
+     * Registers the 'certificates' endpoint for the account page.
+     */
+    public function add_certificates_endpoint() {
+        add_rewrite_endpoint('certificates', EP_PAGES);
+    }
 
-    $certificates = array();
+    /**
+     * Renders the content for the 'Certificates' page using a template.
+     */
+    public function render_certificates_content() {
+        if (!is_user_logged_in()) {
+            return;
+        }
+        // Certificate product slug.
+        $certificate_slug = 'certificado-academico-virtual';
+        $certificate_product_id = get_page_by_path($certificate_slug, OBJECT, 'product')->ID;
 
-    // Iterar sobre los pedidos para encontrar el producto de certificado.
-    if ( $customer_orders ) {
-        foreach ( $customer_orders as $order ) {
-            foreach ( $order->get_items() as $item ) {
-                $product_id = $item->get_product_id();
+        if (!$certificate_product_id) {
+            echo '<p>'.__('The certificate product could not be found.', 'woocertificatespackage').'</p>';
+            return;
+        }
 
-                if ( $product_id == $certificate_product_id ) {
-                    $certificates[] = array(
-                        'product_name' => $item->get_name(),
-                        'order_id'     => $order->get_id(),
-                    );
+        // Get the current user's ID.
+        $user_id = get_current_user_id();
+
+        // Get the user's completed orders.
+        $customer_orders = wc_get_orders(array(
+            'customer' => $user_id,
+            'status'   => 'completed',
+            'limit'    => -1,
+        ));
+
+        $certificates = array();
+
+        // Iterate over orders to find the certificate product.
+        if ($customer_orders) {
+            foreach ($customer_orders as $order) {
+                foreach ($order->get_items() as $item) {
+                    $product_id = $item->get_product_id();
+                    if ($product_id == $certificate_product_id) {
+                        $certificates[] = array(
+                            'product_name' => $item->get_name(),
+                            'order_id' => $order->get_id(),
+                        );
+                    }
                 }
             }
         }
-    }
+        // Load the template file.
+        $template_file = WOOCERTI_PLUGIN_DIR.'public/templates/certificates.php';
 
-    // Cargar el archivo de plantilla con los datos.
-    $template_file = WCBP_PLUGIN_DIR . 'public/templates/certificates.php';
-
-    if ( file_exists( $template_file ) ) {
-        // Incluye el archivo de la plantilla y pasa la variable $certificates.
-        include $template_file;
-    } else {
-        echo '<p>' . __( 'No se pudo encontrar el archivo de plantilla para los certificados.', 'woocertificatespackage' ) . '</p>';
+        if (file_exists($template_file)) {
+            // Include the template and pass the $certificates variable.
+            include $template_file;
+        } else {
+            echo '<p>'.__('Certificate template file not found.', 'woocertificatespackage').'</p>';
+        }
     }
 }
-add_action( 'woocommerce_account_certificates_endpoint', 'woocerti_my_account_endpoint_content' );
 
+new Woocerti_Public();
