@@ -22,65 +22,76 @@ define('WOOCERTI_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WOOCERTI_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 /**
- * Main plugin class to bootstrap all functionalities.
- * This class follows the Singleton pattern.
+ * Main function to run the plugin after all plugins have been loaded.
  */
-final class Woocerti_Core {
+function woocerti_run_plugin() {
+    /**
+     * WooCommerce Check
+     * Please check if the WooCommerce main class exists before continuing.
+     */
+    if (!class_exists('WooCommerce')) {
+        return;
+    }
 
-	/**
-	 * The single instance of the class.
-	 *
-	 * @var Woocerti_Core
-	 */
-	private static $instance;
+    /**
+     * Main plugin class for initializing all functionality.
+     * This class follows the Singleton pattern.
+     */
+    final class Woocerti_Core {
 
-	/**
-	 * Main Woocerti_Core Instance.
-	 *
-	 * Ensures only one instance of the class is loaded or can be loaded.
-	 *
-	 * @static
-	 * @return Woocerti_Core
-	 */
-	public static function get_instance() {
-		if (null === self::$instance) {
-			self::$instance = new self();
-		}
-		return self::$instance;
-	}
+        /**
+         * The only instance of the class.
+         *
+         * @var Woocerti_Core
+         */
+        private static $instance;
 
-	/**
-	 * Private constructor to prevent direct creation of the object.
-	 */
-	private function __construct() {
-		$this->includes();
-		$this->hooks();
-	}
+        /**
+         * Gets the only instance of the class.
+         *
+         * @static
+         * @return Woocerti_Core
+         */
+        public static function get_instance() {
+            if (null === self::$instance) {
+                self::$instance = new self();
+            }
+            return self::$instance;
+        }
 
-	/**
-	 * Include all necessary files.
-	 */
-	private function includes() {
-		require_once WOOCERTI_PLUGIN_DIR.'settings.php';
-		require_once WOOCERTI_PLUGIN_DIR.'public/functions.php';
-		require_once WOOCERTI_PLUGIN_DIR.'admin/functions.php';
-	}
+        /**
+         * Private constructor to prevent direct creation of the object.
+         */
+        private function __construct() {
+            $this->includes();
+            $this->hooks();
+        }
 
-	/**
-	 * Setup all WordPress hooks.
-	 */
-	private function hooks() {
-		// Activation and deactivation hooks.
-		register_activation_hook(__FILE__, array('Woocerti_Activator', 'activate'));
-		register_deactivation_hook(__FILE__, array('Woocerti_Deactivator', 'deactivate'));
-	}
+        /**
+         * Includes all necessary files.
+         */
+        private function includes() {
+            require_once WOOCERTI_PLUGIN_DIR.'settings.php';
+            require_once WOOCERTI_PLUGIN_DIR.'public/functions.php';
+            require_once WOOCERTI_PLUGIN_DIR.'admin/functions.php';
+        }
+
+        /**
+         * Configure all WordPress hooks.
+         */
+        private function hooks() {
+            // Activation and deactivation hooks.
+            register_activation_hook(__FILE__, array('Woocerti_Activator', 'activate'));
+            register_deactivation_hook(__FILE__, array('Woocerti_Deactivator', 'deactivate'));
+            // This hook ensures category creation on first load after activation.
+            add_action('admin_init', array('Woocerti_Activator', 'create_tables'));
+            add_action('admin_init', array('Woocerti_Activator', 'create_default_category'));
+        }
+    }
+
+    // Initializes the main class of the plugin.
+    Woocerti_Core::get_instance();
 }
 
-/**
- * Initialize the main plugin class.
- */
-function woocerti_init_plugin() {
-	Woocerti_Core::get_instance();
-}
-
-add_action('plugins_loaded', 'woocerti_init_plugin');
+// Connect our main function to the 'plugins_loaded' action.
+add_action('plugins_loaded', 'woocerti_run_plugin');
