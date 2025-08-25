@@ -16,14 +16,18 @@ class Woocerti_Public {
         // Enqueue scripts and styles.
         add_action('wp_enqueue_scripts', array($this, 'enqueue_public_assets'));
 
-        // Add 'Certificates' link to WooCommerce 'My Account' menu.
-        add_filter('woocommerce_account_menu_items', array($this, 'add_certificates_link'), 40);
+        // Register custom endpoints.
+        add_action('init', array($this, 'add_plugin_endpoints'));
 
-        // Register the new endpoint for the 'Certificates' page.
-        add_action('init', array($this, 'add_certificates_endpoint'));
+        // Add custom menu items to the "My Account" page.
+        add_filter('woocommerce_account_menu_items', array($this, 'add_plugin_account_links'), 40);
 
-        // Render content for the 'Certificates' endpoint.
+        // Render content for the custom endpoints.
         add_action('woocommerce_account_certificates_endpoint', array($this, 'render_certificates_content'));
+        add_action('woocommerce_account_courses_endpoint', array($this, 'render_courses_content'));
+
+        // Handle form submissions for course CRUD operations.
+        add_action('template_redirect', array($this, 'handle_course_crud'));
     }
 
     /**
@@ -41,24 +45,38 @@ class Woocerti_Public {
     }
 
     /**
-     * Adds a 'Certificates' link to the WooCommerce account menu.
+     * Registers the custom endpoints for the account page.
+     */
+    public function add_plugin_endpoints() {
+        // Endpoint for Certificates.
+        add_rewrite_endpoint('certificates', EP_PAGES);
+        // Endpoint for Courses.
+        add_rewrite_endpoint('courses', EP_PAGES);
+    }
+
+    /**
+     * Adds custom menu items to the WooCommerce account menu.
      *
      * @param array $menu_links Existing menu links.
      * @return array Modified menu links.
      */
-    public function add_certificates_link($menu_links) {
-        $new_link = array('certificates' => __('Certificates', 'woocertificatespackage'));
-        $new_menu_links = array_slice($menu_links, 0, 5, true)
-                        + $new_link
-                        + array_slice($menu_links, 5, null, true);
-        return $new_menu_links;
-    }
+    public function add_plugin_account_links($menu_links) {
+        // Define new links.
+        $new_links = array();
 
-    /**
-     * Registers the 'certificates' endpoint for the account page.
-     */
-    public function add_certificates_endpoint() {
-        add_rewrite_endpoint('certificates', EP_PAGES);
+        // Add a Courses link only for 'institute' users.
+        if (current_user_can(WOOCERTI_ROLE_USER_ALIANZA)) {
+            $new_links['courses'] = __('Courses', 'woocertificatespackage');
+        }
+
+        // Add a Certificates link.
+        $new_links['certificates'] = __('Certificates', 'woocertificatespackage');
+
+        // Insert new links after the 'dashboard' item.
+        $dashboard = array_slice($menu_links, 0, 1, true); // Get the 'dashboard' link.
+        $rest = array_slice($menu_links, 1, null, true); // Get the rest of the links.
+
+        return array_merge($dashboard, $new_links, $rest);
     }
 
     /**
@@ -69,8 +87,7 @@ class Woocerti_Public {
             return;
         }
         // Certificate product slug.
-        $certificate_slug = 'certificado-academico-virtual';
-        $certificate_product_id = get_page_by_path($certificate_slug, OBJECT, 'product')->ID;
+        $certificate_product_id = get_page_by_path(WOOCERTI_CERTIFICATE_SLUG, OBJECT, 'product')->ID;
 
         if (!$certificate_product_id) {
             echo '<p>'.__('The certificate product could not be found.', 'woocertificatespackage').'</p>';
@@ -83,8 +100,8 @@ class Woocerti_Public {
         // Get the user's completed orders.
         $customer_orders = wc_get_orders(array(
             'customer' => $user_id,
-            'status'   => 'completed',
-            'limit'    => -1,
+            'status' => 'completed',
+            'limit' => -1,
         ));
 
         $certificates = array();
@@ -111,6 +128,188 @@ class Woocerti_Public {
             include $template_file;
         } else {
             echo '<p>'.__('Certificate template file not found.', 'woocertificatespackage').'</p>';
+        }
+    }
+
+    /**
+     * Renders the CRUD content for the 'Courses' page.
+     */
+    public function render_courses_content() {
+        if (!current_user_can(WOOCERTI_ROLE_USER_ALIANZA)) {
+            echo '<div class="woocommerce-error">'.__('You do not have permission to view this page.', 'woocertificatespackage').'</div>';
+            return;
+        }
+
+        $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : 'view';
+        $course_id = isset($_GET['course_id']) ? intval($_GET['course_id']) : 0;
+
+        // Check if a specific course exists for the current user.
+        if ($course_id > 0) {
+            global $wpdb;
+            $table_name = $wpdb->prefix.'courses';
+            $user_id = get_current_user_id();
+            $course = $wpdb->get_row($wpdb->prepare("SELECT * FROM `$table_name` WHERE id_course = %d AND id_user = %d", $course_id, $user_id));
+            if (!$course) {
+                echo '<div class="woocommerce-error">'.__('Course not found.', 'woocertificatespackage').'</div>';
+                $action = 'view'; // Fallback to list view.
+            }
+        }
+
+        switch ($action) {
+            case 'create':
+            case 'edit':
+                $this->render_course_form($course_id, isset($course) ? $course : null);
+                break;
+            case 'view':
+            default:
+                $this->render_course_list();
+                break;
+        }
+    }
+
+    /**
+     * Renders the list of courses for the current user.
+     */
+    private function render_course_list() {
+        global $wpdb;
+        $table_name = $wpdb->prefix.'courses';
+        $user_id = get_current_user_id();
+        $courses = $wpdb->get_results($wpdb->prepare("SELECT * FROM `$table_name` WHERE id_user = %d ORDER BY date_created DESC", $user_id));
+        $endpoint_url = wc_get_account_endpoint_url('courses');
+        
+        // Include the template file.
+        $template_file = WOOCERTI_PLUGIN_DIR.'public/templates/courses-list.php';
+        if (file_exists($template_file)) {
+            include $template_file;
+        } else {
+            echo '<p>'.__('Course list template file not found.', 'woocertificatespackage').'</p>';
+        }
+    }
+
+    /**
+     * Renders the form for creating or editing a course.
+     *
+     * @param int $course_id
+     * @param object|null $course
+     */
+    private function render_course_form($course_id = 0, $course = null) {
+        $is_edit = ($course_id > 0 && $course);
+        $form_title = $is_edit ? __('Edit Course', 'woocertificatespackage') : __('Create New Course', 'woocertificatespackage');
+        $submit_label = $is_edit ? __('Update Course', 'woocertificatespackage') : __('Save Course', 'woocertificatespackage');
+
+        // Form fields initialization
+        $course_name = $is_edit ? $course->course_name : '';
+        $academic_hours = $is_edit ? $course->academic_hours : '';
+        $tutor_instructor = $is_edit ? $course->tutor_instructor : '';
+        $location = $is_edit ? $course->location : '';
+        $course_date = $is_edit ? $course->course_date : '';
+        $academic_program = $is_edit ? $course->academic_program : '';
+        $price_per_student = $is_edit ? $course->price_per_student : '';
+        $certification_fee_type = $is_edit ? $course->certification_fee_type : 'Fixed';
+        $certification_fee_value = $is_edit ? $course->certification_fee_value : '';
+        $status = $is_edit ? $course->status : 'Pending';
+
+        $endpoint_url = wc_get_account_endpoint_url('courses');
+        
+        $template_file = WOOCERTI_PLUGIN_DIR.'public/templates/course-form.php';
+        if (file_exists($template_file)) {
+            include $template_file;
+        } else {
+            echo '<p>'.__('Course form template file not found.', 'woocertificatespackage').'</p>';
+        }
+    }
+
+    /**
+     * Handles the CRUD operations for courses.
+     */
+    public function handle_course_crud() {
+        if (!current_user_can(WOOCERTI_ROLE_USER_ALIANZA) || !is_account_page() || get_query_var('courses') === false) {
+            return;
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'courses';
+        $user_id = get_current_user_id();
+
+        // Handle delete action
+        if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['course_id']) && isset($_GET['_wpnonce'])) {
+            if (wp_verify_nonce(sanitize_text_field($_GET['_wpnonce']), 'delete_course')) {
+                $course_id = intval($_GET['course_id']);
+                $wpdb->delete(
+                    $table_name,
+                    array(
+                        'id_course' => $course_id,
+                        'id_user' => $user_id
+                    )
+                );
+                // Redirect to avoid resubmission
+                wp_safe_redirect(wc_get_account_endpoint_url('courses'));
+                exit;
+            }
+        }
+
+        // Handle save (create/update) action
+        if (isset($_POST['save_course']) && isset($_POST['course_nonce'])) {
+            if (wp_verify_nonce(sanitize_text_field($_POST['course_nonce']), 'save_course_data')) {
+                $course_id = isset($_POST['course_id']) ? intval($_POST['course_id']) : 0;
+
+                // Sanitize and validate all form fields.
+                $course_name = sanitize_text_field($_POST['course_name']);
+                $academic_hours = intval($_POST['academic_hours']);
+                $tutor_instructor = sanitize_text_field($_POST['tutor_instructor']);
+                $location = sanitize_text_field($_POST['location']);
+                $course_date = sanitize_text_field($_POST['course_date']);
+                $academic_program = sanitize_textarea_field($_POST['academic_program']);
+                $price_per_student = floatval($_POST['price_per_student']);
+                $certification_fee_type = sanitize_text_field($_POST['certification_fee_type']);
+                $certification_fee_value = floatval($_POST['certification_fee_value']);
+                $status = sanitize_text_field($_POST['status']);
+                $current_date = current_time('mysql');
+
+                // --- VALIDATION: Ensure price and fee value are not negative. ---
+                if ($price_per_student < 0 || $certification_fee_value < 0) {
+                    // Do not save the data and return. You could also add an admin notice here.
+                    return;
+                }
+
+                $data = array(
+                    'course_name'           => $course_name,
+                    'academic_hours'        => $academic_hours,
+                    'tutor_instructor'      => $tutor_instructor,
+                    'location'              => $location,
+                    'course_date'           => $course_date,
+                    'academic_program'      => $academic_program,
+                    'price_per_student'     => $price_per_student,
+                    'certification_fee_type' => $certification_fee_type,
+                    'certification_fee_value' => $certification_fee_value,
+                    'status'                => $status,
+                    'date_updated'          => $current_date,
+                );
+
+                if ($course_id > 0) {
+                    // Update existing course
+                    $wpdb->update(
+                        $table_name,
+                        $data,
+                        array(
+                            'id_course' => $course_id,
+                            'id_user'   => $user_id,
+                        )
+                    );
+                } else {
+                    // Insert new course
+                    $data['id_user'] = $user_id;
+                    $data['date_created'] = $current_date;
+                    $wpdb->insert(
+                        $table_name,
+                        $data
+                    );
+                }
+
+                // Redirect to avoid form resubmission
+                wp_safe_redirect(wc_get_account_endpoint_url('courses'));
+                exit;
+            }
         }
     }
 }

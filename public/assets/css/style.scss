@@ -1,3 +1,69 @@
 .woocommerce-MyAccount-navigation ul li.woocommerce-MyAccount-navigation-link--certificates a:before{
-	content: "\f0a3"
+	content: "\f559"
+}
+
+.woocommerce-MyAccount-navigation ul li.woocommerce-MyAccount-navigation-link--courses a:before{
+	content: "\f19d"
+}
+
+/*
+ * ====================================================================
+ * Styles for the Courses form in "My Account"
+ * Based on the appearance of the WooCommerce form.
+ * ====================================================================
+ */
+
+.woocommerce-MyAccount-content {
+    form {
+        /* General form style */
+        display: flex;
+        flex-direction: column;
+
+        /* Row container to group fields */
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+
+            /* Style for individual fields within a row */
+            .form-row-field {
+                margin-right: 1em;
+                &:last-child {
+                    margin-right: 0;
+                }
+            }
+        }
+
+        /* Width rules for fields */
+        > p {
+            flex-basis: 100%; /* 100% width for single-column fields */
+        }
+        .form-row {
+            .form-row-field {
+                flex: 1 1 calc(50% - 1em); /* Each field takes 50% of the width */
+            }
+
+            /* Style for rows with three fields */
+            &--three-fields {
+                .form-row-field {
+                    flex: 1 1 calc(33.333% - 1em); /* Each field takes one-third of the width */
+                }
+            }
+        }
+    }
+}
+
+/* Media query for smaller screens (mobile mode) */
+@media (max-width: 768px) {
+    .woocommerce-MyAccount-content form {
+        .form-row {
+            flex-direction: column;
+            margin-bottom: 0;
+
+            .form-row-field {
+                flex: 1 1 100% !important;
+                margin-right: 0;
+            }
+        }
+    }
 }

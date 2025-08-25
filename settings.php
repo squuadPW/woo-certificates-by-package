@@ -8,3 +8,5 @@ if (!defined('ABSPATH')) {
  * Defines asset versions to prevent caching issues.
  */
 define('WOOCERTI_VERSION_ASSETS', '1.0.0');
+define('WOOCERTI_ROLE_USER_ALIANZA', 'institutes');
+define('WOOCERTI_CERTIFICATE_SLUG', 'certificado-academico-virtual');
