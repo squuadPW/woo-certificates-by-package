@@ -15,7 +15,6 @@ class Woocerti_Admin {
 	public function __construct() {
 		// Add admin menu page.
 		add_action('admin_menu', array($this, 'add_admin_menu_page'));
-
 		// Enqueue admin scripts and styles.
 		add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
 	}
@@ -63,6 +62,8 @@ class Woocerti_Admin {
  */
 class Woocerti_Activator {
     public static function activate() {
+        // It runs only once when the plugin is activated.
+        flush_rewrite_rules();
         self::create_tables();
         self::create_default_category();
     }
@@ -74,48 +75,40 @@ class Woocerti_Activator {
         // Set the character set and collation
         $charset_collate = $wpdb->get_charset_collate();
 
-        // Set the table name with the WordPress prefix
-        $table_courses = $wpdb->prefix.'courses';
-
         // Define the SQL query to create the table Courses
-        $sql_courses = "CREATE TABLE `$table_courses` (
-            `id_course` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+        $sql_courses = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}courses` (
+            `id_course` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             `id_user` BIGINT(20) UNSIGNED NOT NULL,
+            `code` VARCHAR(255) NOT NULL,
             `course_name` VARCHAR(300) NOT NULL,
-            `academic_hours` DECIMAL(10, 2) UNSIGNED NOT NULL,
+            `academic_hours` DECIMAL(10, 2) NOT NULL,
             `tutor_instructor` VARCHAR(255) NULL,
             `location` VARCHAR(255) NULL,
             `course_date` DATE NULL,
-            `academic_program` TEXT NULL,
-            `price_per_student` DECIMAL(10, 2) UNSIGNED NOT NULL,
-            `certification_fee_type` ENUM('Fixed', 'Percentage') NOT NULL,
-            `certification_fee_value` DECIMAL(10, 2) UNSIGNED NOT NULL,
-            `status` ENUM('Pending', 'Approved', 'Rejected', 'Completed') NOT NULL DEFAULT 'Pending',
             `description` TEXT NULL,
-            `code` VARCHAR(50) NOT NULL,
-            `date_created` DATETIME DEFAULT '0000-00-00 00:00:00' NOT NULL,
-            `date_updated` DATETIME DEFAULT '0000-00-00 00:00:00' NOT NULL,
+            `academic_program` TEXT NULL,
+            `price_per_student` DECIMAL(10, 2) NOT NULL,
+            `certification_fee_type` VARCHAR(50) NOT NULL,
+            `certification_fee_value` DECIMAL(10, 2) NOT NULL,
+            `status` VARCHAR(50) NOT NULL DEFAULT 'Pending',
+            `date_created` DATETIME NOT NULL,
+            `date_updated` DATETIME NOT NULL,
             PRIMARY KEY (`id_course`),
-            INDEX (`id_user`)
+            KEY `idx_id_user` (`id_user`)
         ) $charset_collate;";
 
-        // Set the table name with the WordPress prefix
-        $table_certificates = $wpdb->prefix.'certificates';
-
         // Define the SQL query to create the table Certificates
-        $sql_certificates = "CREATE TABLE `$table_certificates` (
-            `id_certificate` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-            `id_user` BIGINT(20) UNSIGNED NOT NULL,
-            `id_course` INT(11) UNSIGNED NOT NULL,
+        $sql_certificates = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}certificates` (
+            `id_certificate` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             `id_wc_order` BIGINT(20) UNSIGNED NOT NULL,
+            `id_course` BIGINT(20) UNSIGNED NOT NULL,
             `quantity_purchased` INT(11) UNSIGNED NOT NULL,
             `quantity_available` INT(11) UNSIGNED NOT NULL,
-            `date_created` DATETIME DEFAULT '0000-00-00 00:00:00' NOT NULL,
-            `date_updated` DATETIME DEFAULT '0000-00-00 00:00:00' NOT NULL,
+            `date_created` DATETIME NOT NULL,
+            `date_updated` DATETIME NOT NULL,
             PRIMARY KEY (`id_certificate`),
-            INDEX (`id_user`),
-            INDEX (`id_course`),
-            INDEX (`id_wc_order`)
+            KEY `idx_id_wc_order` (`id_wc_order`),
+            KEY `idx_id_course` (`id_course`)
         ) $charset_collate;";
 
         // Include the upgrade.php file to use the dbDelta() function
@@ -162,5 +155,3 @@ class Woocerti_Deactivator {
 		// Deactivation code here (e.g., cleaning up data).
 	}
 }
-
-// // new Woocerti_Admin();

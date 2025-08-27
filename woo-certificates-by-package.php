@@ -21,6 +21,16 @@ if (!defined('ABSPATH')) {
 define('WOOCERTI_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WOOCERTI_PLUGIN_URL', plugin_dir_url(__FILE__));
 
+// We need them available for the activation/deactivation hooks.
+require_once WOOCERTI_PLUGIN_DIR.'settings.php';
+require_once WOOCERTI_PLUGIN_DIR.'public/functions.php';
+require_once WOOCERTI_PLUGIN_DIR.'admin/functions.php';
+
+// We register the activation/deactivation hooks
+register_activation_hook(__FILE__, array('Woocerti_Activator', 'activate'));
+register_deactivation_hook(__FILE__, array('Woocerti_Deactivator', 'deactivate'));
+
+
 /**
  * Main function to run the plugin after all plugins have been loaded.
  */
@@ -63,29 +73,9 @@ function woocerti_run_plugin() {
          * Private constructor to prevent direct creation of the object.
          */
         private function __construct() {
-            $this->includes();
-            $this->hooks();
-        }
-
-        /**
-         * Includes all necessary files.
-         */
-        private function includes() {
-            require_once WOOCERTI_PLUGIN_DIR.'settings.php';
-            require_once WOOCERTI_PLUGIN_DIR.'public/functions.php';
-            require_once WOOCERTI_PLUGIN_DIR.'admin/functions.php';
-        }
-
-        /**
-         * Configure all WordPress hooks.
-         */
-        private function hooks() {
-            // Activation and deactivation hooks.
-            register_activation_hook(__FILE__, array('Woocerti_Activator', 'activate'));
-            register_deactivation_hook(__FILE__, array('Woocerti_Deactivator', 'deactivate'));
-            // This hook ensures category creation on first load after activation.
-            add_action('admin_init', array('Woocerti_Activator', 'create_tables'));
-            add_action('admin_init', array('Woocerti_Activator', 'create_default_category'));
+            // Initializes public and administrative functionality classes from the main class.
+            new Woocerti_Public();
+            new Woocerti_Admin();
         }
     }
 

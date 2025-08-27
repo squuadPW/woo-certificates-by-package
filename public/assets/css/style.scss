@@ -40,6 +40,12 @@
             }
         }
 
+        .p-buttons {
+            .button {
+                margin-right: 1em;
+            }
+        }
+
         /* Width rules for fields */
         > p {
             flex-basis: 100%; /* 100% width for single-column fields */
@@ -77,6 +83,9 @@
             }
         }
     }
+    .woocommerce-MyAccount-courses-table {
+        margin-top: 1.5em;
+    }
 }
 
 /* Media query for smaller screens (mobile mode) */
@@ -94,7 +103,7 @@
     }
 }
 
-/* Estilos para la validación en el lado del cliente */
+/* Styles for client-side validation */
 .woocommerce-MyAccount-content form {
     .validation-message {
         display: block;
@@ -111,7 +120,7 @@
         }
     }
 }
-/* Estilo para el input cuando tiene error */
+/* Style for input when it has an error */
 .woocommerce-MyAccount-content form {
     .input-error {
         border-color: #e74c3c !important;

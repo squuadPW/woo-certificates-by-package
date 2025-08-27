@@ -82,14 +82,27 @@ jQuery(document).ready(function($) {
             validateField($(this));
         });
 
-        // Validate all fields on form submission
+        // Validate on form submission
         form.on('submit', function(e) {
+            var clickedButton = $(document.activeElement);
+            var fieldsToValidate = [];
             var isFormValid = true;
-            form.find('input[required], select[required]').each(function() {
-                if (!validateField($(this))) {
+
+            // Determine which fields to validate based on the clicked button
+            if (clickedButton.attr('name') === 'save_draft') {
+                // For drafts, only validate the course name
+                fieldsToValidate.push($('#course_name'));
+            } else {
+                // For a full save, validate all required fields
+                fieldsToValidate.push($('#course_name'), $('#academic_hours'), $('#price_per_student'), $('#certification_fee_type'), $('#certification_fee_value'));
+            }
+
+            // Perform validation on the selected fields
+            for (var i = 0; i < fieldsToValidate.length; i++) {
+                if (!validateField(fieldsToValidate[i])) {
                     isFormValid = false;
                 }
-            });
+            }
 
             if (!isFormValid) {
                 e.preventDefault();
@@ -120,4 +133,18 @@ jQuery(document).ready(function($) {
             $('#certification_fee_value').closest('.form-row-field').find('.validation-message').text('').hide();
         });
     }
+
+    // Add CSS class for fields on focus
+    $(document).on('focusin', '.input-field', function() {
+        $(this).closest('.form-row-field').addClass('focus');
+    }).on('focusout', '.input-field', function() {
+        $(this).closest('.form-row-field').removeClass('focus');
+    });
+
+    // Handle course deletion confirmation
+    $('.woocommerce-MyAccount-courses-table').on('click', '.delete-button', function(e) {
+        if (!confirm("<?php echo esc_js(__('Are you sure you want to delete this course?', 'woocertificatespackage')); ?>")) {
+            e.preventDefault();
+        }
+    });
 });
