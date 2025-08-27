@@ -42,6 +42,25 @@ class Woocerti_Public {
 
         // Enqueue JS file.
         wp_enqueue_script('woocerti-public-script', WOOCERTI_PLUGIN_URL.'public/assets/js/main.js', array('jquery'), $version, true);
+
+        // Get the current logged-in user's data
+        $current_user = wp_get_current_user();
+        $user_name = $current_user->display_name;
+
+        // Pass messages and user data from PHP to JavaScript
+        $data_to_pass = array(
+            'messages' => array(
+                'course_name_required' => __('The course name is required.', 'woocertificatespackage'),
+                'course_name_maxlength' => __('The course name cannot exceed 300 characters.', 'woocertificatespackage'),
+                'academic_hours_invalid' => __('Academic hours must be a number greater than zero.', 'woocertificatespackage'),
+                'course_date_past' => __('The date cannot be earlier than the current one.', 'woocertificatespackage'),
+                'certification_fee_type_invalid' => __('Please select a valid fare type.', 'woocertificatespackage'),
+                'price_per_student_invalid' => __('The price must be a number greater than zero.', 'woocertificatespackage'),
+                'certification_fee_value_invalid' => __('The rate value must be a number greater than zero.', 'woocertificatespackage'),
+            ),
+            'user_name' => $user_name,
+        );
+        wp_localize_script('woocerti-public-script', 'woocerti_data', $data_to_pass);
     }
 
     /**
@@ -207,10 +226,10 @@ class Woocerti_Public {
         $price_per_student = $is_edit ? $course->price_per_student : '';
         $certification_fee_type = $is_edit ? $course->certification_fee_type : 'Fixed';
         $certification_fee_value = $is_edit ? $course->certification_fee_value : '';
-        $status = $is_edit ? $course->status : 'Pending';
+        // $status = $is_edit ? $course->status : 'Pending';
 
         $endpoint_url = wc_get_account_endpoint_url('courses');
-        
+
         $template_file = WOOCERTI_PLUGIN_DIR.'public/templates/course-form.php';
         if (file_exists($template_file)) {
             include $template_file;
@@ -228,8 +247,17 @@ class Woocerti_Public {
         }
 
         global $wpdb;
-        $table_name = $wpdb->prefix . 'courses';
+        $table_name = $wpdb->prefix.'courses';
         $user_id = get_current_user_id();
+        $current_user = wp_get_current_user();
+        $user_initials = '';
+        if ($current_user) {
+            $names = explode(' ', $current_user->display_name);
+            foreach ($names as $name) {
+                $user_initials .= strtoupper(substr($name, 0, 1));
+            }
+            $user_initials .= $user_id;
+        }
 
         // Handle delete action
         if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['course_id']) && isset($_GET['_wpnonce'])) {
@@ -255,7 +283,7 @@ class Woocerti_Public {
 
                 // Sanitize and validate all form fields.
                 $course_name = sanitize_text_field($_POST['course_name']);
-                $academic_hours = intval($_POST['academic_hours']);
+                $academic_hours = floatval($_POST['academic_hours']);
                 $tutor_instructor = sanitize_text_field($_POST['tutor_instructor']);
                 $location = sanitize_text_field($_POST['location']);
                 $course_date = sanitize_text_field($_POST['course_date']);
@@ -263,7 +291,7 @@ class Woocerti_Public {
                 $price_per_student = floatval($_POST['price_per_student']);
                 $certification_fee_type = sanitize_text_field($_POST['certification_fee_type']);
                 $certification_fee_value = floatval($_POST['certification_fee_value']);
-                $status = sanitize_text_field($_POST['status']);
+                // $status = sanitize_text_field($_POST['status']);
                 $current_date = current_time('mysql');
 
                 // --- VALIDATION: Ensure price and fee value are not negative. ---
@@ -273,17 +301,17 @@ class Woocerti_Public {
                 }
 
                 $data = array(
-                    'course_name'           => $course_name,
-                    'academic_hours'        => $academic_hours,
-                    'tutor_instructor'      => $tutor_instructor,
-                    'location'              => $location,
-                    'course_date'           => $course_date,
-                    'academic_program'      => $academic_program,
-                    'price_per_student'     => $price_per_student,
+                    'course_name' => $course_name,
+                    'academic_hours' => $academic_hours,
+                    'tutor_instructor' => $tutor_instructor,
+                    'location' => $location,
+                    'course_date' => $course_date,
+                    'academic_program' => $academic_program,
+                    'price_per_student' => $price_per_student,
                     'certification_fee_type' => $certification_fee_type,
                     'certification_fee_value' => $certification_fee_value,
-                    'status'                => $status,
-                    'date_updated'          => $current_date,
+                    // 'status' => $status,
+                    'date_updated' => $current_date,
                 );
 
                 if ($course_id > 0) {
@@ -297,9 +325,20 @@ class Woocerti_Public {
                         )
                     );
                 } else {
+                    // Generate a unique course code for a new course
+                    $course_name_parts = explode(' ', $course_name);
+                    $course_acronym = '';
+                    foreach ($course_name_parts as $part) {
+                        $course_acronym .= strtoupper(substr($part, 0, 1));
+                    }
+                    $unique_id = wp_generate_password(6, false, false);
+                    $course_code = 'C-'.$course_acronym.'-'.$user_initials.'-'.$unique_id;
+
+                    $data['code'] = $course_code;
                     // Insert new course
                     $data['id_user'] = $user_id;
                     $data['date_created'] = $current_date;
+                    $data['status'] = 'Pending';
                     $wpdb->insert(
                         $table_name,
                         $data

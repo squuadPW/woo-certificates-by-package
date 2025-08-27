@@ -1,3 +1,4 @@
+@charset "UTF-8";
 .woocommerce-MyAccount-navigation ul li.woocommerce-MyAccount-navigation-link--certificates a:before {
   content: "\f559";
 }
@@ -31,11 +32,32 @@
 .woocommerce-MyAccount-content form .form-row .form-row-field:last-child {
   margin-right: 0;
 }
+.woocommerce-MyAccount-content form .form-row .form-row-field select {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
 .woocommerce-MyAccount-content form > p {
   flex-basis: 100%; /* 100% width for single-column fields */
 }
+.woocommerce-MyAccount-content form > p .form-required-fields-note {
+  font-style: italic;
+}
 .woocommerce-MyAccount-content form .form-row {
   /* Style for rows with three fields */
+}
+.woocommerce-MyAccount-content form .form-row .row-check {
+  display: flex;
+  margin-bottom: 1em;
+}
+.woocommerce-MyAccount-content form .form-row .row-check input,
+.woocommerce-MyAccount-content form .form-row .row-check label {
+  cursor: pointer;
+}
+.woocommerce-MyAccount-content form .form-row .row-check input:focus {
+  border: none;
+  box-shadow: none;
+  outline: none;
 }
 .woocommerce-MyAccount-content form .form-row .form-row-field {
   flex: 1 1 calc(50% - 1em); /* Each field takes 50% of the width */
@@ -54,4 +76,25 @@
     flex: 1 1 100% !important;
     margin-right: 0;
   }
+}
+/* Estilos para la validación en el lado del cliente */
+.woocommerce-MyAccount-content form .validation-message {
+  display: block;
+  margin-top: 0.5em;
+  font-size: 0.9em;
+  color: #e74c3c;
+  font-weight: 500;
+  visibility: hidden;
+}
+.woocommerce-MyAccount-content form .form-row-field .validation-message {
+  margin-top: 0.5em;
+}
+
+/* Estilo para el input cuando tiene error */
+.woocommerce-MyAccount-content form .input-error {
+  border-color: #e74c3c !important;
+  box-shadow: inset 0 1px 1px #e74c3c !important;
+}
+.woocommerce-MyAccount-content form .validation-message {
+  visibility: visible;
 }/*# sourceMappingURL=style.css.map */
