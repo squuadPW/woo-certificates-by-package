@@ -56,7 +56,7 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
     }
 
     /**
-     * Devuelve un array de vistas disponibles en la tabla.
+     * Returns an array of views available on the table.
      *
      * @return array
      */
@@ -64,7 +64,7 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
         global $wpdb;
         $table_name = $wpdb->prefix.'courses';
 
-        $total_courses = $wpdb->get_var("SELECT COUNT(id_course) FROM {$table_name} WHERE status != 'Draft'");
+        $total_courses = $wpdb->get_var("SELECT COUNT(id_course) FROM {$table_name} WHERE status != 'Draft' AND status != 'Declined'");
         $pending_courses = $wpdb->get_var("SELECT COUNT(id_course) FROM {$table_name} WHERE status = 'Pending'");
 
         $current_status = isset($_GET['status']) ? $_GET['status'] : 'all';
@@ -115,8 +115,8 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
             $status = sanitize_text_field($_GET['status']);
             $status_filter = $wpdb->prepare(" AND status = %s", $status);
         } else {
-            // The 'all' view excludes 'Draft' courses
-            $status_filter = " AND status != 'Draft'";
+            // The 'all' view excludes 'Draft' and 'Declined' courses
+            $status_filter = " AND status != 'Draft' AND status != 'Declined'";
         }
         // Base query to obtain the items
         $sql = "SELECT * FROM {$table_name} WHERE 1=1{$status_filter}";
@@ -170,6 +170,9 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
                     case 'Completed':
                         $status_label = __('Completed', 'woocertificatespackage');
                         break;
+                    case 'Declined':
+                        $status_label = __('Deleted', 'woocertificatespackage');
+                        break;
                     default:
                         $status_label = esc_html($item->status);
                         break;
@@ -187,12 +190,22 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
      * @return string
      */
     public function column_course_name($item) {
-        $edit_url = esc_url(admin_url('admin.php?page=woocerti-add-course&action=edit&id='.$item->id_course));
-        $delete_url = esc_url(wp_nonce_url(admin_url('admin.php?page=woocerti-courses&action=delete&id='.$item->id_course), 'delete_course_'.$item->id_course));
-        $actions = [
-            'edit'   => sprintf('<a href="%s">%s</a>', $edit_url, __('Edit', 'woocertificatespackage')),
-            'delete' => sprintf('<a href="%s" class="delete-button">%s</a>', $delete_url, __('Delete', 'woocertificatespackage')),
-        ];
+        $delete_args = array(
+            'action' => 'woocerti_delete_course_admin',
+            'course_id' => $item->id_course,
+        );
+
+        // Create the URL with the security nonce
+        $delete_url = wp_nonce_url(
+            add_query_arg($delete_args, admin_url('admin-post.php')),
+            'woocerti_delete_course_nonce',
+            'woocerti_nonce'
+        );
+
+        $actions = array(
+            'edit' => sprintf('<a href="%s">%s</a>', esc_url(add_query_arg('id', $item->id_course, admin_url('admin.php?page=woocerti-add-course&action=edit'))), __('Edit', 'woocertificatespackage')),
+            'delete' => sprintf('<a href="%s" class="delete-course-link">%s</a>', esc_url($delete_url), __('Delete', 'woocertificatespackage')),
+        );
 
         return sprintf('%1$s %2$s', esc_html($item->course_name), $this->row_actions($actions));
     }

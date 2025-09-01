@@ -191,4 +191,11 @@ jQuery(document).ready(function($) {
     // Execute the initial state function on page load.
     setInitialFormState();
 
+    // Confirmation to delete the course
+    $('body').on('click', '.delete-course-link', function(e) {
+        if (!confirm(woocerti_data.deleteConfirmText)) {
+            e.preventDefault();
+        }
+    });
+
 });

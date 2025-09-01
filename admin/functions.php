@@ -19,6 +19,8 @@ class Woocerti_Admin {
 		add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
         // Handle form submission for saving/updating courses from the admin panel.
         add_action('admin_post_woocerti_save_course_admin', array($this, 'handle_admin_course_save'));
+        // Handle form delete courses from the admin panel.
+        add_action('admin_post_woocerti_delete_course_admin', array($this, 'handle_admin_course_delete'));
 	}
 
     /**
@@ -83,6 +85,16 @@ class Woocerti_Admin {
                 <?php echo esc_html(__('Add course', 'woocertificatespackage')); ?>
             </a>
             <hr class="wp-header-end">
+            <?php
+                // Displays confirmation messages if they exist in the URL
+                if (isset($_GET['message'])) {
+                    if ($_GET['message'] === 'deleted') {
+                        echo '<div class="notice notice-success is-dismissible"><p>'.esc_html(__('Course deleted successfully.', 'woocertificatespackage')).'</p></div>';
+                    } elseif ($_GET['message'] === 'error') {
+                        echo '<div class="notice notice-error is-dismissible"><p>'.esc_html(__('Error deleting course.', 'woocertificatespackage')).'</p></div>';
+                    }
+                }
+            ?>
             <form method="get">
                 <input type="hidden" name="page" value="<?php echo esc_attr($_REQUEST['page']); ?>" />
                 <?php
@@ -225,6 +237,40 @@ class Woocerti_Admin {
         exit;
     }
 
+    /**
+     * Manages course deletion from the admin panel.
+     */
+    public function handle_admin_course_delete() {
+        global $wpdb;
+        $table_name = $wpdb->prefix.'courses';
+
+        // Security check: nonce and permissions.
+        if (!isset($_GET['woocerti_nonce']) || !wp_verify_nonce($_GET['woocerti_nonce'], 'woocerti_delete_course_nonce') || !current_user_can('manage_options')) {
+            wp_die(__('You do not have permission to do this.', 'woocertificatespackage'));
+        }
+
+        // Get the course ID and validate that it is a number.
+        $course_id = isset($_GET['course_id']) ? intval($_GET['course_id']) : 0;
+        if ($course_id === 0) {
+            wp_die(__('Invalid course ID.', 'woocertificatespackage'));
+        }
+
+        // The course status is updated to 'Declined' to perform a partial deletion.
+        $updated = $wpdb->update($table_name, array('status' => 'Declined'), array('id_course' => $course_id));
+
+        // Redirect with a success or error message.
+        if ($updated !== false) {
+            $message = urlencode(__('Course deleted successfully.', 'woocertificatespackage'));
+            $redirect_url = add_query_arg(array('message' => 'deleted'), admin_url('admin.php?page=woocerti-courses'));
+        } else {
+            $message = urlencode(__('Error deleting course.', 'woocertificatespackage'));
+            $redirect_url = add_query_arg(array('message' => 'error'), admin_url('admin.php?page=woocerti-courses'));
+        }
+
+        wp_redirect(esc_url_raw($redirect_url));
+        exit;
+    }
+
 	/**
 	 * Renders the content of the admin page.
 	 */
@@ -258,6 +304,7 @@ class Woocerti_Admin {
                 'price_per_student_invalid' => __('The price must be a number greater than zero.', 'woocertificatespackage'),
                 'certification_fee_value_invalid' => __('The rate value must be a number greater than zero.', 'woocertificatespackage'),
             ),
+            'deleteConfirmText' => __('Are you sure you want to delete this course? This action cannot be undone.', 'woocertificatespackage'),
         );
         wp_localize_script('woocerti-admin-script', 'woocerti_data', $data_to_pass);
 	}
