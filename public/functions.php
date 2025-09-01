@@ -353,7 +353,7 @@ class Woocerti_Public {
                 foreach ($course_name_parts as $part) {
                     $course_acronym .= strtoupper(substr($part, 0, 1));
                 }
-                $unique_id = wp_generate_password(6, false, false);
+                $unique_id = strtoupper(wp_generate_password(6, false, false));
                 $course_code = 'C-'.$course_acronym.'-'.$user_initials.'-'.$unique_id;
 
                 $data['code'] = $course_code;

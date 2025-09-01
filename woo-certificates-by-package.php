@@ -26,6 +26,9 @@ require_once WOOCERTI_PLUGIN_DIR.'settings.php';
 require_once WOOCERTI_PLUGIN_DIR.'public/functions.php';
 require_once WOOCERTI_PLUGIN_DIR.'admin/functions.php';
 
+// Include the custom WP_List_Table class for the admin panel.
+require_once WOOCERTI_PLUGIN_DIR.'admin/class-courses-list-table.php';
+
 // We register the activation/deactivation hooks
 register_activation_hook(__FILE__, array('Woocerti_Activator', 'activate'));
 register_deactivation_hook(__FILE__, array('Woocerti_Deactivator', 'deactivate'));

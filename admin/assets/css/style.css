@@ -1,3 +1,150 @@
-.woocerti-wrap h1 {
-  color: #0073aa;
+/* =========================================
+    General styles for the course form
+    ========================================= */
+.woocerti-course-form.wrap {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+.woocerti-course-form h1 {
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 15px;
+  margin-bottom: 30px;
+  font-size: 1.8em;
+  color: #32373c;
+}
+.woocerti-course-form .form-section-card {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  padding: 22.5px;
+  margin-bottom: 30px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.woocerti-course-form .form-section-card h2 {
+  margin-top: 0;
+  margin-bottom: 22.5px;
+  font-size: 1.5em;
+  color: #32373c;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 15px;
+}
+.woocerti-course-form .form-group-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: -15px;
+  margin-right: -15px;
+}
+.woocerti-course-form .form-group-row .form-group-item {
+  flex: 1;
+  padding-left: 15px;
+  padding-right: 15px;
+  margin-bottom: 15px;
+  min-width: 280px;
+}
+.woocerti-course-form .form-group-row.two-columns .form-group-item {
+  flex-basis: calc(50% - 30px);
+}
+.woocerti-course-form .form-group-row.three-columns .form-group-item {
+  flex-basis: calc(33.33% - 30px);
+}
+.woocerti-course-form label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 5px;
+  color: #32373c;
+}
+.woocerti-course-form input[type=text],
+.woocerti-course-form input[type=number],
+.woocerti-course-form input[type=date],
+.woocerti-course-form textarea,
+.woocerti-course-form select {
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #c3c4c7;
+  border-radius: 3px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+  background-color: #fff;
+  color: #32373c;
+}
+.woocerti-course-form input[type=text]:focus,
+.woocerti-course-form input[type=number]:focus,
+.woocerti-course-form input[type=date]:focus,
+.woocerti-course-form textarea:focus,
+.woocerti-course-form select:focus {
+  border-color: #787c82;
+  box-shadow: 0 0 0 1px #787c82;
+  outline: none;
+}
+.woocerti-course-form input[type=text].error-field,
+.woocerti-course-form input[type=number].error-field,
+.woocerti-course-form input[type=date].error-field,
+.woocerti-course-form textarea.error-field,
+.woocerti-course-form select.error-field {
+  border-color: red !important;
+}
+.woocerti-course-form .error-message {
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
+  display: block;
+}
+.woocerti-course-form .is-tutor-checkbox-wrapper {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+}
+.woocerti-course-form .is-tutor-checkbox-wrapper label {
+  cursor: pointer;
+}
+.woocerti-course-form .date-display-card {
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 30px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+.woocerti-course-form .date-display-card p {
+  margin: 0;
+  padding-bottom: 10px;
+}
+.woocerti-course-form .date-display-card p:last-of-type {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.woocerti-course-form .date-display-card p strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #555;
+}
+.woocerti-course-form .date-display-card p .text-date {
+  text-indent: 15px;
+}
+.woocerti-course-form .date-display-card input[type=text] {
+  background-color: #f0f0f0;
+  cursor: default;
+}
+.woocerti-course-form p.submit {
+  margin-top: 30px;
+  padding-top: 15px;
+  border-top: 1px solid #e0e0e0;
+  text-align: right;
+}
+@media (max-width: 768px) {
+  .woocerti-course-form .form-group-row {
+    flex-direction: column;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .woocerti-course-form .form-group-item {
+    flex-basis: 100% !important;
+    padding-left: 0;
+    padding-right: 0;
+    margin-bottom: 15px;
+  }
 }/*# sourceMappingURL=style.css.map */
