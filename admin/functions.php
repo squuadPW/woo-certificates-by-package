@@ -104,6 +104,25 @@ class Woocerti_Admin {
                 $courses_table->display();
                 ?>
             </form>
+            <div id="delete-confirmation-modal" class="woocerti-modal-overlay" style="display: none;">
+                <div class="woocerti-modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title">
+                            <?php echo __("You're sure?", 'woocertificatespackage'); ?>
+                        </h2>
+                        <button type="button" class="btn-close"></button>
+                    </div>
+                    <div class="modal-content">
+                        <p class="modal-message"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="modal-actions">
+                            <button class="button button-secondary modal-cancel-btn"><?php echo __('Cancel', 'woocertificatespackage'); ?></button>
+                            <button class="button button-primary modal-confirm-btn"><?php echo __('Confirm', 'woocertificatespackage'); ?></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <?php
     }
@@ -112,60 +131,65 @@ class Woocerti_Admin {
 	 * Renders the content of the 'Add course' admin page.
 	 */
 	public function render_add_course_page() {
-        global $wpdb;
-        $table_name = $wpdb->prefix.'courses';
+        $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : 'add';
+        if ($action === 'view') {
+            include WOOCERTI_PLUGIN_DIR.'admin/templates/course-view.php';
+        } else {
+            global $wpdb;
+            $table_name = $wpdb->prefix.'courses';
 
-        // Default values
-        $course_id = isset($_GET['id']) ? absint($_GET['id']) : 0;
-        $form_title = __('Add course', 'woocertificatespackage');
+            // Default values
+            $course_id = isset($_GET['id']) ? absint($_GET['id']) : 0;
+            $form_title = __('Add course', 'woocertificatespackage');
 
-        // Form variables with default values
-        $id_user = '';
-        $course_name = '';
-        $tutor_instructor = '';
-        $is_tutor = 0;
-        $academic_hours = '';
-        $location = '';
-        $course_date = '';
-        $academic_program = '';
-        $price_per_student = '';
-        $certification_fee_type = 'Fixed';
-        $certification_fee_value = '';
-        $status = 'Pending';
-        $code = '';
-        $date_created = '';
-        $date_updated = '';
-        $institutes = get_users(array('role' => 'institutes', 'orderby' => 'display_name', 'order' => 'ASC'));
+            // Form variables with default values
+            $id_user = '';
+            $course_name = '';
+            $tutor_instructor = '';
+            $is_tutor = 0;
+            $academic_hours = '';
+            $location = '';
+            $course_date = '';
+            $academic_program = '';
+            $price_per_student = '';
+            $certification_fee_type = 'Fixed';
+            $certification_fee_value = '';
+            $status = 'Pending';
+            $code = '';
+            $date_created = '';
+            $date_updated = '';
+            $institutes = get_users(array('role' => 'institutes', 'orderby' => 'display_name', 'order' => 'ASC'));
 
-        // If you are editing a course, upload the data
-        if ($course_id > 0) {
-            $course_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE id_course = %d", $course_id));
+            // If you are editing a course, upload the data
+            if ($course_id > 0) {
+                $course_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE id_course = %d", $course_id));
 
-            if ($course_data) {
-                $form_title = __('Edit Course', 'woocertificatespackage').': '.esc_html($course_data->course_name);
-                $id_user = $course_data->id_user;
-                $course_name = $course_data->course_name;
-                $tutor_instructor = $course_data->tutor_instructor;
-                $is_tutor = $course_data->is_tutor;
-                $academic_hours = $course_data->academic_hours;
-                $location = $course_data->location;
-                $course_date = $course_data->course_date;
-                $academic_program = $course_data->academic_program;
-                $price_per_student = $course_data->price_per_student;
-                $certification_fee_type = $course_data->certification_fee_type;
-                $certification_fee_value = $course_data->certification_fee_value;
-                $status = $course_data->status;
-                $code = $course_data->code;
-                $date_created = $course_data->date_created;
-                $date_updated = $course_data->date_updated;
-            } else {
-                // Redirect if the ID is invalid
-                wp_die(__('Course not found.', 'woocertificatespackage'));
+                if ($course_data) {
+                    $form_title = __('Edit Course', 'woocertificatespackage').': '.esc_html($course_data->course_name);
+                    $id_user = $course_data->id_user;
+                    $course_name = $course_data->course_name;
+                    $tutor_instructor = $course_data->tutor_instructor;
+                    $is_tutor = $course_data->is_tutor;
+                    $academic_hours = $course_data->academic_hours;
+                    $location = $course_data->location;
+                    $course_date = $course_data->course_date;
+                    $academic_program = $course_data->academic_program;
+                    $price_per_student = $course_data->price_per_student;
+                    $certification_fee_type = $course_data->certification_fee_type;
+                    $certification_fee_value = $course_data->certification_fee_value;
+                    $status = $course_data->status;
+                    $code = $course_data->code;
+                    $date_created = $course_data->date_created;
+                    $date_updated = $course_data->date_updated;
+                } else {
+                    // Redirect if the ID is invalid
+                    wp_die(__('Course not found.', 'woocertificatespackage'));
+                }
             }
-        }
 
-        // Include the form template file, passing all variables
-        include WOOCERTI_PLUGIN_DIR.'admin/templates/course-form.php';
+            // Include the form template file, passing all variables
+            include WOOCERTI_PLUGIN_DIR.'admin/templates/course-form.php';
+        }
     }
 
     /**
@@ -269,6 +293,33 @@ class Woocerti_Admin {
 
         wp_redirect(esc_url_raw($redirect_url));
         exit;
+    }
+
+    /**
+     * Gets the details of a specific course from the database.
+     *
+     * @param int $course_id - The ID of the course to search for.
+     * @return object|null - The course object if found, or null if not.
+     */
+    public function get_course_details($course_id) {
+        global $wpdb;
+        $table_name = $wpdb->prefix.'courses';
+
+        // Ensures the ID is an integer to prevent SQL injections
+        $course_id = intval($course_id);
+
+        // If the ID is 0, it means it is not valid, so we return null
+        if ($course_id === 0) {
+            return null;
+        }
+
+        // Prepare and execute the SQL query safely
+        $sql = $wpdb->prepare("SELECT * FROM {$table_name} WHERE id_course = %d", $course_id);
+
+        // Gets a single row of results
+        $course_details = $wpdb->get_row($sql);
+
+        return $course_details;
     }
 
 	/**

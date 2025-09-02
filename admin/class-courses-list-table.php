@@ -203,6 +203,7 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
         );
 
         $actions = array(
+            'view' => sprintf('<a href="%s">%s</a>', esc_url(add_query_arg('id', $item->id_course, admin_url('admin.php?page=woocerti-add-course&action=view'))), __('View', 'woocertificatespackage')),
             'edit' => sprintf('<a href="%s">%s</a>', esc_url(add_query_arg('id', $item->id_course, admin_url('admin.php?page=woocerti-add-course&action=edit'))), __('Edit', 'woocertificatespackage')),
             'delete' => sprintf('<a href="%s" class="delete-course-link">%s</a>', esc_url($delete_url), __('Delete', 'woocertificatespackage')),
         );

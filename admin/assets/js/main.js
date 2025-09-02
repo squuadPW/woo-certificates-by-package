@@ -192,10 +192,37 @@ jQuery(document).ready(function($) {
     setInitialFormState();
 
     // Confirmation to delete the course
+    // $('body').on('click', '.delete-course-link', function(e) {
+    //     if (!confirm(woocerti_data.deleteConfirmText)) {
+    //         e.preventDefault();
+    //     }
+    // });
+
     $('body').on('click', '.delete-course-link', function(e) {
-        if (!confirm(woocerti_data.deleteConfirmText)) {
-            e.preventDefault();
-        }
+        e.preventDefault();
+        // Stores the link URL for later use
+        const deleteUrl = $(this).attr('href');
+
+        // Show the modal
+        const modal = $('#delete-confirmation-modal');
+        modal.find('.modal-message').text(woocerti_data.deleteConfirmText);
+        modal.fadeIn(300);
+
+        // Handles the confirm action
+        modal.find('.modal-confirm-btn').off('click').on('click', function () {
+            // Redirects to the deletion URL only if confirmed
+            window.location.href = deleteUrl;
+            modal.fadeOut(300);
+        });
+
+        // Handles the cancel action
+        modal.find('.modal-cancel-btn').off('click').on('click', function () {
+            modal.fadeOut(300);
+        });
+
+        modal.find('.btn-close').off('click').on('click', function () {
+            modal.fadeOut(300);
+        });
     });
 
 });
