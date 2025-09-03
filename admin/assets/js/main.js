@@ -22,6 +22,21 @@ jQuery(document).ready(function($) {
     }
 
     /**
+     * @function setInitialAttrFee
+     * @description Sets or removes the 'max' attribute on the fee value input field based on the selected fee type.
+     * This function ensures that if the fee type is 'Percentage', the input field's maximum value is set to 100.
+     *
+     * @returns {void} This function does not return any value.
+     */
+    function setInitialAttrFee() {
+        if ($('#certification_fee_type').val() === 'Percentage') {
+            $('#certification_fee_value').attr('max', '100');
+        } else {
+            $('#certification_fee_value').removeAttr('max');
+        }
+    }
+
+    /**
      * Validates the initial state of the form when the page loads (edit mode).
      */
     function setInitialFormState() {
@@ -126,6 +141,27 @@ jQuery(document).ready(function($) {
     }
 
     /**
+     * @function validatePercentageFee
+     * @description Validates if a fee value is valid based on its type.
+     * Specifically, it checks if a percentage fee value exceeds 100.
+     *
+     * @param {jQuery} type - The jQuery object representing the fee type field.
+     * @param {jQuery} value - The jQuery object representing the fee value field.
+     *
+     * @returns {boolean} Returns `true` if the fee is valid, and `false` otherwise.
+     */
+    function validatePercentageFee(type, value) {
+        let isValid = true;
+        if (type.val() === 'Percentage' && value.val() > 100) {
+            isValid = false;
+            value.addClass('error-field');
+            value.closest('.form-group-item').find('.error-message').text(woocerti_data.messages.is_percentage_rate_valid).show();
+        }
+
+        return isValid;
+    }
+
+    /**
      * Main function that validates the entire form upon submission.
      * @returns {boolean} - true if the form is valid, false otherwise.
      */
@@ -145,6 +181,8 @@ jQuery(document).ready(function($) {
         isFormValid &= validateField($('#certification_fee_type'));
         // Validation for 'Status'
         isFormValid &= validateField($('#status'));
+        // Validation for 'Status'
+        isFormValid &= validatePercentageFee($('#certification_fee_type'), $('#certification_fee_value'));
 
         return isFormValid;
     }
@@ -158,10 +196,16 @@ jQuery(document).ready(function($) {
 
     // Listen for changes in the rate type to reset the value.
     $('#certification_fee_type').on('change', function () {
-        validateField($(this));
+        let elem = $(this);
+        validateField(elem);
         $('#certification_fee_value').val(0);
         $('#certification_fee_value').removeClass('error-field');
         $('#certification_fee_value').closest('.form-group-item').find('.error-message').text('').hide();
+        if (elem.val() === 'Percentage') {
+            $('#certification_fee_value').attr('max', '100');
+        } else {
+            $('#certification_fee_value').removeAttr('max');
+        }
     });
 
     // Listen to change events for dynamic tutor functionality.
@@ -186,10 +230,11 @@ jQuery(document).ready(function($) {
     });
     $('#status').on('change', function () {
         validateField($(this));
-    })
+    });
 
     // Execute the initial state function on page load.
     setInitialFormState();
+    setInitialAttrFee();
 
     // Confirmation to delete the course
     // $('body').on('click', '.delete-course-link', function(e) {

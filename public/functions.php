@@ -51,8 +51,10 @@ class Woocerti_Public {
                 'certification_fee_type_invalid' => __('Please select a valid fare type.', 'woocertificatespackage'),
                 'price_per_student_invalid' => __('The price must be a number greater than zero.', 'woocertificatespackage'),
                 'certification_fee_value_invalid' => __('The rate value must be a number greater than zero.', 'woocertificatespackage'),
+                'is_percentage_rate_valid' => __('The rate value cannot be greater than 100 if the type is "Percentage".', 'woocertificatespackage'),
             ),
             'user_name' => $user_name,
+            'deleteConfirmText' => __('Are you sure you want to delete this course? This action cannot be undone.', 'woocertificatespackage'),
         );
         wp_localize_script('woocerti-public-script', 'woocerti_data', $data_to_pass);
     }
@@ -281,16 +283,25 @@ class Woocerti_Public {
         if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['course_id']) && isset($_GET['_wpnonce'])) {
             if (wp_verify_nonce(sanitize_text_field($_GET['_wpnonce']), 'delete_course')) {
                 $course_id = intval($_GET['course_id']);
-                $wpdb->delete(
-                    $table_name,
-                    array(
-                        'id_course' => $course_id,
-                        'id_user' => $user_id
-                    )
-                );
-                // Redirect to avoid resubmission
-                wp_safe_redirect(wc_get_account_endpoint_url('courses'));
-                exit;
+                if ($course_id > 0) {
+                    $current_status = $wpdb->get_var($wpdb->prepare("SELECT status FROM `{$table_name}` WHERE id_course = %d AND id_user = %d", $course_id, $user_id));
+
+                    if ($current_status !== 'Draft') {
+                        wc_add_notice(__('You can only delete courses with the status "Draft"', 'woocertificatespackage'), 'error');
+                    } else {
+                        $wpdb->delete(
+                            $table_name,
+                            array(
+                                'id_course' => $course_id,
+                                'id_user' => $user_id
+                            )
+                        );
+                        wc_add_notice(__('Course draft successfully deleted.', 'woocertificatespackage'));
+                    }
+                    // Redirect to avoid resubmission
+                    wp_safe_redirect(wc_get_account_endpoint_url('courses'));
+                    exit;
+                }
             }
         }
 
@@ -302,6 +313,18 @@ class Woocerti_Public {
             }
 
             $course_id = isset($_POST['course_id']) ? intval($_POST['course_id']) : 0;
+
+            if ($course_id > 0) {
+                $current_status = $wpdb->get_var($wpdb->prepare("SELECT status FROM `{$table_name}` WHERE id_course = %d AND id_user = %d", $course_id, $user_id));
+
+                if ($current_status !== 'Draft') {
+                    wc_add_notice(__('You can only edit courses with the status "Draft"', 'woocertificatespackage'), 'error');
+                    // Redirect to avoid resubmission
+                    wp_safe_redirect(wc_get_account_endpoint_url('courses'));
+                    exit;
+                }
+            }
+
             // Determine the status based on the button clicked.
             $status_to_save = isset($_POST['save_draft']) ? 'Draft' : 'Pending';
 
@@ -319,7 +342,7 @@ class Woocerti_Public {
 
             // --- VALIDATION: Ensure price and fee value are not negative. ---
             if ($price_per_student < 0 || $certification_fee_value < 0) {
-                wc_print_notice(__('Values cannot be negative.', 'woocertificatespackage'), 'error');
+                wc_add_notice(__('Values cannot be negative.', 'woocertificatespackage'), 'error');
                 return;
             }
 
@@ -343,7 +366,7 @@ class Woocerti_Public {
                     $data,
                     array(
                         'id_course' => $course_id,
-                        'id_user'   => $user_id,
+                        'id_user' => $user_id,
                     )
                 );
             } else {

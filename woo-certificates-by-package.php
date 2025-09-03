@@ -29,6 +29,33 @@ require_once WOOCERTI_PLUGIN_DIR.'admin/functions.php';
 // Include the custom WP_List_Table class for the admin panel.
 require_once WOOCERTI_PLUGIN_DIR.'admin/class-courses-list-table.php';
 
+/**
+ * Prevents deletion of the 'Certificates' category to protect plugin functionality.
+ */
+function woocerti_prevent_category_deletion($term_id, $taxonomy) {
+    // If the taxonomy is not 'product_cat', we do nothing.
+    if ($taxonomy !== 'product_cat') {
+        return;
+    }
+
+    $protected_slug = WOOCERTI_SLUG_CATEGORY_DEFAULT;
+    $term = get_term($term_id, $taxonomy);
+
+    // If the term exists and its slug matches the protected one, we return an error to stop the deletion.
+    if ($term && $term->slug === $protected_slug) {
+        // Stores the error message in a temporary (transient) variable.
+        set_transient(
+            'woocerti_deletion_error',
+            __('The "Certificates" category cannot be deleted because it is required for the plugin to function.', 'woocertificatespackage'),
+        );
+        wp_safe_redirect(admin_url('edit-tags.php?taxonomy=product_cat&post_type=product'));
+        exit;
+    }
+
+    return null;
+}
+add_filter('pre_delete_term', 'woocerti_prevent_category_deletion', 99, 2);
+
 // We register the activation/deactivation hooks
 register_activation_hook(__FILE__, array('Woocerti_Activator', 'activate'));
 register_deactivation_hook(__FILE__, array('Woocerti_Deactivator', 'deactivate'));

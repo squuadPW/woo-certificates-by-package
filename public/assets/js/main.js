@@ -2,10 +2,14 @@
  * JavaScript logic for the public-facing side of the WooCommerce Certificates by Package plugin.
  */
 jQuery(document).ready(function($) {
-    console.log('Woo Certificates public script loaded.');
-
     var form = $('#course-form');
     if (form.length) {
+        if ($('#certification_fee_type').val() === 'Percentage') {
+            $('#certification_fee_value').attr('max', '100');
+        } else {
+            $('#certification_fee_value').removeAttr('max');
+        }
+
         // Function to validate a single field and show/hide error messages
         function validateField(field) {
             var isValid = true;
@@ -104,12 +108,20 @@ jQuery(document).ready(function($) {
                 }
             }
 
+            if (isFormValid && clickedButton.attr('name') !== 'save_draft') {
+                let type_fee = $('#certification_fee_type').val();
+                let value_fee = parseFloat($('#certification_fee_value').val());
+                if (type_fee === 'Percentage' && value_fee > 100) {
+                    isFormValid = false;
+                    $('#certification_fee_value').addClass('input-error');
+                    $('#certification_fee_value').closest('.form-row-field').find('.validation-message').text(woocerti_data.messages.is_percentage_rate_valid).show();
+                }
+            }
+
             if (!isFormValid) {
                 e.preventDefault();
             }
         });
-
-        console.log("woocerti_data: ",woocerti_data);
 
         // Toggle tutor name based on checkbox state
         $('#is_my_name').on('change', function() {
@@ -128,9 +140,16 @@ jQuery(document).ready(function($) {
 
         // Reset the certification fee value when the fee type changes
         $('#certification_fee_type').on('change', function() {
-            $('#certification_fee_value').val('');
+            let elem = $(this);
+            $('#certification_fee_value').val(0);
             $('#certification_fee_value').removeClass('input-error');
             $('#certification_fee_value').closest('.form-row-field').find('.validation-message').text('').hide();
+
+            if (elem.val() === 'Percentage') {
+                $('#certification_fee_value').attr('max', '100');
+            } else {
+                $('#certification_fee_value').removeAttr('max');
+            }
         });
     }
 
@@ -142,8 +161,8 @@ jQuery(document).ready(function($) {
     });
 
     // Handle course deletion confirmation
-    $('.woocommerce-MyAccount-courses-table').on('click', '.delete-button', function(e) {
-        if (!confirm("<?php echo esc_js(__('Are you sure you want to delete this course?', 'woocertificatespackage')); ?>")) {
+    $('.woocommerce-MyAccount-courses-table').on('click', '.woocerti-delete-button', function(e) {
+        if (!confirm(woocerti_data.deleteConfirmText)) {
             e.preventDefault();
         }
     });

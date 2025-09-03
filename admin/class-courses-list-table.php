@@ -131,7 +131,7 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
 
         $this->set_pagination_args([
             'total_items' => $total_items,
-            'per_page'    => $per_page,
+            'per_page' => $per_page,
             'total_pages' => ceil($total_items / $per_page),
         ]);
     }
