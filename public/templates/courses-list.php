@@ -78,7 +78,7 @@
                             <a href="<?php echo esc_url($endpoint_url.'?action=edit&course_id='.$course->id_course); ?>" class="woocommerce-button button woocerti-edit-button"><?php echo __('Edit', 'woocertificatespackage'); ?></a>
                             <a href="<?php echo esc_url(wp_nonce_url($endpoint_url.'?action=delete&course_id='.$course->id_course, 'delete_course')); ?>" class="woocommerce-button button woocerti-delete-button"><?php echo __('Delete', 'woocertificatespackage'); ?></a>
                         <?php elseif ($course->status === 'Approved') : ?>
-                            <a href="#" class="woocommerce-button button woocerti-buy-button"><?php echo __('Buy Certificates', 'woocertificatespackage'); ?></a>
+                            <a href="<?php echo esc_url($endpoint_url.'?action=buy&course_id='.$course->id_course); ?>" class="woocommerce-button button woocerti-buy-button"><?php echo __('Buy Certificates', 'woocertificatespackage'); ?></a>
                         <?php endif; ?>
                     </td>
                 </tr>

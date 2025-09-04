@@ -67,6 +67,12 @@
 .woocommerce-MyAccount-content form .form-row--three-fields .form-row-field {
   flex: 1 1 calc(33.333% - 1em); /* Each field takes one-third of the width */
 }
+.woocommerce-MyAccount-content form .form-row .quantity-input-wrapper label {
+  font-weight: 600;
+}
+.woocommerce-MyAccount-content form .form-row .quantity-input-wrapper input {
+  width: auto;
+}
 .woocommerce-MyAccount-content .woocommerce-MyAccount-courses-table {
   margin-top: 1.5em;
 }

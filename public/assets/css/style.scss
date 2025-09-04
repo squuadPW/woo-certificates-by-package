@@ -81,6 +81,15 @@
                     flex: 1 1 calc(33.333% - 1em); /* Each field takes one-third of the width */
                 }
             }
+
+            .quantity-input-wrapper {
+                label {
+                    font-weight: 600;
+                }
+                input {
+                    width: auto;
+                }
+            }
         }
     }
     .woocommerce-MyAccount-courses-table {

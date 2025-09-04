@@ -22,7 +22,7 @@
                             <option value="" <?php selected($id_user, ''); ?>><?php echo esc_html(__('Select User', 'woocertificatespackage')); ?></option>
                             <?php foreach ($institutes as $institute) : ?>
                                 <option value="<?php echo esc_attr($institute->ID); ?>" <?php selected($id_user, $institute->ID); ?>>
-                                    <?php echo esc_html($institute->display_name . ' - ' . $institute->user_email); ?>
+                                    <?php echo esc_html($institute->display_name.' - '.$institute->user_email); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
