@@ -19,6 +19,9 @@
                 <th class="woocommerce-MyAccount-courses-table__header woocommerce-MyAccount-courses-table__header--price">
                     <span class="nobr"><?php echo __('Price per student', 'woocertificatespackage'); ?></span>
                 </th>
+                <th class="woocommerce-MyAccount-courses-table__header woocommerce-MyAccount-courses-table__header--price-certificate">
+                    <span class="nobr"><?php echo __('Certificate price', 'woocertificatespackage'); ?></span>
+                </th>
                 <th class="woocommerce-MyAccount-courses-table__header woocommerce-MyAccount-courses-table__header--status">
                     <span class="nobr"><?php echo __('Status', 'woocertificatespackage'); ?></span>
                 </th>
@@ -44,6 +47,15 @@
                     </td>
                     <td class="woocommerce-MyAccount-courses-table__cell woocommerce-MyAccount-courses-table__cell--price" data-title="<?php echo esc_attr(__('Price per student', 'woocertificatespackage')); ?>">
                         <?php echo wc_price($course->price_per_student); ?>
+                    </td>
+                    <td class="woocommerce-MyAccount-courses-table__cell woocommerce-MyAccount-courses-table__cell--price-certificate" data-title="<?php echo esc_attr(__('Certificate price', 'woocertificatespackage')); ?>">
+                        <?php
+                            if ($course->certification_fee_type === 'Percentage') {
+                                $price_certificate = ($course->price_per_student * $course->certification_fee_value) / 100;
+                            } else {
+                                $price_certificate = $course->certification_fee_value;
+                            }
+                            echo wc_price($price_certificate); ?>
                     </td>
                     <td class="woocommerce-MyAccount-courses-table__cell woocommerce-MyAccount-courses-table__cell--status" data-title="<?php echo esc_attr(__('Status', 'woocertificatespackage')); ?>">
                         <span class="woocommerce-MyAccount-courses-table__status woocerti-status-<?php echo esc_attr(strtolower($course->status)); ?>">
