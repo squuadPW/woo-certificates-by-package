@@ -33,9 +33,11 @@ class Woocerti_Public {
         // Allows you to modify the name of a product as it appears on the cart page.
         add_filter('woocommerce_cart_item_name', array($this, 'display_course_name_in_cart'), 10, 2);
         // Generates a personalized notification, right after a product has been added to the cart.
-        add_action('woocommerce_add_to_cart', array($this, 'add_custom_add_to_cart_notice'), 10, 6);
-        // Deletes the original message, ensuring only the custom notification is displayed.
-        add_filter('wc_add_to_cart_message', array($this, 'hide_default_add_to_cart_notice'), 10, 2);
+        add_filter('wc_add_to_cart_message_html', array($this, 'add_custom_add_to_cart_notice'), 10, 2);
+        // Save custom cart metadata to the order item at checkout.
+        add_action('woocommerce_checkout_create_order_line_item', array($this, 'save_custom_data_to_order_item'), 10, 4);
+        // New filter to display the course name on the order page
+        add_filter('woocommerce_order_item_name', array($this, 'display_course_name_on_order'), 10, 2);
     }
 
     /**
@@ -512,7 +514,7 @@ class Woocerti_Public {
         if ($product && has_term(WOOCERTI_NAME_CATEGORY_DEFAULT, 'product_cat', $product_id)) {
             // If the product is in the correct category, add the custom data.
             if (isset($_POST['course_id']) && isset($_POST['woocerti_custom_price'])) {
-                $cart_item_data['woocerti_custom_data'] = array(
+                $cart_item_data['woocerti_custom_data_certificates'] = array(
                     'course_id' => intval($_POST['course_id']),
                     'custom_price' => floatval($_POST['woocerti_custom_price']),
                 );
@@ -536,12 +538,12 @@ class Woocerti_Public {
         if (did_action('woocommerce_before_calculate_totals')) {
             foreach ($cart->get_cart() as $cart_item) {
                 // Check if the cart item has our personalized data
-                if (isset($cart_item['woocerti_custom_data']['custom_price'])) {
+                if (isset($cart_item['woocerti_custom_data_certificates']['custom_price'])) {
                     $product = $cart_item['data'];
                     // Checks if the product exists and belongs to the defined category.
                     if ($product && has_term(WOOCERTI_NAME_CATEGORY_DEFAULT, 'product_cat', $product->get_id())) {
                         // Overwrites the price of the product in the cart.
-                        $cart_item['data']->set_price($cart_item['woocerti_custom_data']['custom_price']);
+                        $cart_item['data']->set_price($cart_item['woocerti_custom_data_certificates']['custom_price']);
                     }
                 }
             }
@@ -557,13 +559,13 @@ class Woocerti_Public {
      */
     public function display_course_name_in_cart($product_name, $cart_item_data) {
         // Check if the cart item has our personalized data.
-        if (isset($cart_item_data['woocerti_custom_data']['course_id'])) {
+        if (isset($cart_item_data['woocerti_custom_data_certificates']['course_id'])) {
             $product_id = $cart_item_data['product_id'];
             // Check if the product is from the 'Certificate' category.
             if (has_term(WOOCERTI_NAME_CATEGORY_DEFAULT, 'product_cat', $product_id)) {
                 global $wpdb;
                 $table_name = $wpdb->prefix.'courses';
-                $course_id = $cart_item_data['woocerti_custom_data']['course_id'];
+                $course_id = $cart_item_data['woocerti_custom_data_certificates']['course_id'];
 
                 // Gets the name of the course from the database.
                 $course_name = $wpdb->get_var($wpdb->prepare("SELECT course_name FROM `$table_name` WHERE id_course = %d", $course_id));
@@ -578,65 +580,99 @@ class Woocerti_Public {
     }
 
     /**
-     * Display a custom notification after adding a product to the cart,
-     * but only if it's from the "Certified" category.
+     * Add a custom notification message after adding a product to the cart,
+     * but only if it's from the 'Certificate' category.
      *
-     * @param string $cart_item_key - The key of the cart item.
-     * @param int $product_id - The product ID.
-     * @param int $quantity - The quantity of the product.
-     * @param int $variation_id - The variation ID.
-     * @param array $variation - The variation data.
-     * @param array $cart_item_data - Los datos del ítem del carrito.
+     * @param string $message - The HTML notification message.
+     * @param array $cart_item_keys - Keys of the added cart items.
+     * @return string The modified HTML notification message.
      */
-    public function add_custom_add_to_cart_notice($cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data) {
+    public function add_custom_add_to_cart_notice($message, $cart_item_keys) {
+        if (isset($_REQUEST['add-to-cart'])) {
+            $product_id = intval($_REQUEST['add-to-cart']);
+            $product = wc_get_product($product_id);
+
+            // Checks if the product exists and belongs to the defined category.
+            if ($product && has_term(WOOCERTI_NAME_CATEGORY_DEFAULT, 'product_cat', $product_id)) {
+                $course_id = isset($_REQUEST['course_id']) ? intval($_REQUEST['course_id']) : 0;
+                $quantity = isset($_REQUEST['quantity']) ? intval($_REQUEST['quantity']) : 1;
+                if ($course_id > 0) {
+                    global $wpdb;
+                    $table_name = $wpdb->prefix.'courses';
+                    $course_name = $wpdb->get_var($wpdb->prepare("SELECT course_name FROM `$table_name` WHERE id_course = %d", $course_id));
+                    if ($course_name) {
+                        $message = sprintf(
+                            _n(
+                                '1 certificate for the course "%2$s" has been added to your cart.',
+                                '%1$d certificates for the course "%2$s" have been added to your cart.',
+                                $quantity,
+                                'woocertificatespackage'
+                            ),
+                            $quantity,
+                            esc_html($course_name)
+                        );
+
+                        $message .= '<a href="'.esc_url(wc_get_account_endpoint_url('courses')).'" class="button wc-forward">'.__('Back to Courses', 'woocertificatespackage').'</a>';
+                    }
+                }
+            }
+        }
+        // If it is not a certified product, we return the original message.
+        return $message;
+    }
+
+    /**
+     * Saves custom cart item data as order metadata,
+     * but only if the product is from the 'Certificate' category.
+     *
+     * @param WC_Order_Item_Product $item
+     * @param string $cart_item_key
+     * @param array $values
+     * @param WC_Order $order
+     */
+    public function save_custom_data_to_order_item($item, $cart_item_key, $values, $order) {
+        $product_id = $values['product_id'];
+
         // Check if the product is from the 'Certificate' category.
         if (has_term(WOOCERTI_NAME_CATEGORY_DEFAULT, 'product_cat', $product_id)) {
             // Check if the cart item has our personalized data.
-            if (isset($cart_item_data['woocerti_custom_data']['course_id'])) {
-                global $wpdb;
-                $table_name = $wpdb->prefix.'courses';
-                $course_id = $cart_item_data['woocerti_custom_data']['course_id'];
-
-                $course_name = $wpdb->get_var($wpdb->prepare("SELECT course_name FROM `$table_name` WHERE id_course = %d", $course_id));
-
-                if ($course_name) {
-                    // Use _n() to handle plural and singular.
-                    $message = sprintf(
-                        _n(
-                            '1 certificate for the course "%2$s" has been added to your cart.',
-                            '%1$d certificates for the course "%2$s" have been added to your cart.',
-                            $quantity,
-                            'woocertificatespackage'
-                        ),
-                        $quantity,
-                        esc_html($course_name)
-                    );
-                    // Add the message to the WooCommerce notification queue.
-                    wc_add_notice($message);
-                }
+            if (isset($values['woocerti_custom_data_certificates'])) {
+                // Saves the data as order metadata.
+                $item->add_meta_data('woocerti_custom_data_certificates', $values['woocerti_custom_data_certificates']);
             }
         }
     }
 
     /**
-     * Hide the default WooCommerce message for the certificate product,
-     * only if it is from the correct category.
+     * Displays the course name in the order details on the "Order Received" page,
+     * but only if the product is from the 'Certificate' category.
      *
-     * @param string $message - Default message.
-     * @param int $product_id - Product ID added.
-     * @return string Empty message to hide the notification.
+     * @param string $item_name - The name of the order item.
+     * @param object $item - The object of the order item.
+     * @return string The name of the modified item.
      */
-    public function hide_default_add_to_cart_notice($message, $product_id) {
-        // Gets the product object.
-        $product = wc_get_product($product_id);
+    public function display_course_name_on_order($item_name, $item) {
+        $product_id = $item->get_product_id();
 
-        // Checks if the product exists and belongs to the defined category.
-        if ($product && has_term(WOOCERTI_NAME_CATEGORY_DEFAULT, 'product_cat', $product_id)) {
-            // Returns an empty message to hide the default notification.
-            return '';
+        // Check if the product is from the 'Certificate' category.
+        if (has_term(WOOCERTI_NAME_CATEGORY_DEFAULT, 'product_cat', $product_id)) {
+            // Check if the order item has the custom course data.
+            $course_data = $item->get_meta('woocerti_custom_data_certificates', true);
+
+            if ($course_data && isset($course_data['course_id'])) {
+                global $wpdb;
+                $table_name = $wpdb->prefix.'courses';
+                $course_id = $course_data['course_id'];
+
+                $course_name = $wpdb->get_var($wpdb->prepare("SELECT course_name FROM `$table_name` WHERE id_course = %d", $course_id));
+
+                if ($course_name) {
+                    $item_name = __('Certificate', 'woocertificatespackage').': '.esc_html($course_name);
+                }
+            }
         }
-        // If it's not our product, return the original WooCommerce message.
-        return $message;
+
+        return $item_name;
     }
 
 }

@@ -115,3 +115,74 @@ function woocerti_run_plugin() {
 
 // Connect our main function to the 'plugins_loaded' action.
 add_action('plugins_loaded', 'woocerti_run_plugin');
+
+
+/**
+ * Generates and updates certificate records in the database based on the status of a WooCommerce order.
+ *
+ * @param int $order_id - The order ID.
+ * @param string $old_status - The previous state of the order.
+ * @param string $new_status - The new state of the order.
+ * @param WC_Order $order - The object of the order.
+ */
+function generate_certificate_records($order_id, $old_status, $new_status, $order) {
+    global $wpdb;
+    $table_name = $wpdb->prefix.'certificates';
+    $current_date = current_time('mysql');
+
+    if ($new_status === 'completed') {
+        // Go through each item in the order.
+        foreach ($order->get_items() as $item) {
+            $product_id = $item->get_product_id();
+
+            // Checks if the product exists and belongs to the defined category.
+            if (has_term(WOOCERTI_NAME_CATEGORY_DEFAULT, 'product_cat', $product_id)) {
+                // Gets the course's custom metadata.
+                $custom_data = $item->get_meta('woocerti_custom_data_certificates', true);
+
+                if ($custom_data && isset($custom_data['course_id'])) {
+                    $course_id = $custom_data['course_id'];
+                    $quantity = $item->get_quantity();
+
+                    $data = array(
+                        'quantity_purchased' => $quantity,
+                        'status' => 'Active',
+                        'date_updated' => $current_date,
+                    );
+
+                    $certificate = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE id_wc_order = %d AND id_course = %d", $order_id, $course_id));
+
+                    if ($certificate) {
+                        // If it exists, we update the record
+                        $wpdb->update(
+                            $table_name,
+                            $data,
+                            array('id_certificate ' => $certificate->id_certificate)
+                        );
+                    } else {
+                        // If it doesn't exist, we create a new record
+                        $data['id_wc_order'] = $order_id;
+                        $data['id_course'] = $course_id;
+                        $data['quantity_available'] = $quantity;
+                        $data['date_created'] = $current_date;
+                        $wpdb->insert(
+                            $table_name,
+                            $data
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    if ($old_status === 'completed' && $new_status !== 'completed') {
+        // Update the status of the certificates linked to the order
+        $wpdb->update(
+            $table_name,
+            array('status' => ucfirst($new_status), 'date_updated' => $current_date),
+            array('id_wc_order' => $order_id)
+        );
+    }
+}
+// Connect our function to the WooCommerce hook.
+add_action('woocommerce_order_status_changed', 'generate_certificate_records', 10, 4);

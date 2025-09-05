@@ -409,6 +409,7 @@ class Woocerti_Activator {
             `id_course` BIGINT(20) UNSIGNED NOT NULL,
             `quantity_purchased` INT(11) UNSIGNED NOT NULL,
             `quantity_available` INT(11) UNSIGNED NOT NULL,
+            `status` VARCHAR(50) NOT NULL DEFAULT 'Active',
             `date_created` DATETIME NOT NULL,
             `date_updated` DATETIME NOT NULL,
             PRIMARY KEY (`id_certificate`),
