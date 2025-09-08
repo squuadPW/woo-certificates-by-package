@@ -113,54 +113,52 @@ class Woocerti_Public {
     }
 
     /**
-     * Renders the content for the 'Certificates' page using a template.
+     * Renders the certificate content page in the "My Account" area.
+     * This function retrieves and displays certificates grouped by course.
      */
     public function render_certificates_content() {
         if (!is_user_logged_in()) {
             return;
         }
-        // Certificate product slug.
-        $certificate_product_id = get_page_by_path(WOOCERTI_SLUG_PRODUCT_DEFAULT, OBJECT, 'product')->ID;
-
-        if (!$certificate_product_id) {
-            echo '<p>'.__('The certificate product could not be found.', 'woocertificatespackage').'</p>';
-            return;
-        }
-
-        // Get the current user's ID.
+        global $wpdb;
         $user_id = get_current_user_id();
 
-        // Get the user's completed orders.
-        $customer_orders = wc_get_orders(array(
-            'customer' => $user_id,
-            'status' => 'completed',
-            'limit' => -1,
-        ));
+        $certificates_table = $wpdb->prefix.'certificates';
+        $courses_table = $wpdb->prefix.'courses';
 
-        $certificates = array();
+        $posts_per_page = WOOCERTI_POSTS_PER_PAGE;
+        $current_page = max(1, get_query_var('pageds'));
+        $offset = ($current_page - 1) * $posts_per_page;
 
-        // Iterate over orders to find the certificate product.
-        if ($customer_orders) {
-            foreach ($customer_orders as $order) {
-                foreach ($order->get_items() as $item) {
-                    $product_id = $item->get_product_id();
-                    if ($product_id == $certificate_product_id) {
-                        $certificates[] = array(
-                            'product_name' => $item->get_name(),
-                            'order_id' => $order->get_id(),
-                        );
-                    }
-                }
-            }
-        }
-        // Load the template file.
-        $template_file = WOOCERTI_PLUGIN_DIR.'public/templates/certificates.php';
+        $total_certificates_query = $wpdb->prepare("
+            SELECT COUNT(DISTINCT c.id_course)
+            FROM `$certificates_table` AS c
+            INNER JOIN `$courses_table` AS co ON c.id_course = co.id_course
+            WHERE co.id_user = %d
+        ", $user_id);
 
+        $total_records = $wpdb->get_var($total_certificates_query);
+        $total_pages = ceil($total_records / $posts_per_page);
+
+        $certificates_by_course = $wpdb->get_results(
+            $wpdb->prepare("
+                SELECT c.id_course, co.course_name, SUM(c.quantity_purchased) as quantity_purchased, (SUM(c.quantity_purchased) - SUM(c.quantity_available)) as total_issued
+                FROM `$certificates_table` AS c
+                INNER JOIN `$courses_table` AS co ON c.id_course = co.id_course
+                WHERE co.id_user = %d
+                GROUP BY co.id_course, co.course_name
+                LIMIT %d OFFSET %d
+            ", $user_id, $posts_per_page, $offset)
+        );
+
+        $endpoint_url = wc_get_account_endpoint_url('certificates');
+
+        // Include the template file.
+        $template_file = WOOCERTI_PLUGIN_DIR.'public/templates/certificates-list.php';
         if (file_exists($template_file)) {
-            // Include the template and pass the $certificates variable.
             include $template_file;
         } else {
-            echo '<p>'.__('Certificate template file not found.', 'woocertificatespackage').'</p>';
+            echo '<p>'.__('Certificate list template file not found.', 'woocertificatespackage').'</p>';
         }
     }
 
@@ -674,5 +672,51 @@ class Woocerti_Public {
 
         return $item_name;
     }
+
+    /**
+     * Finds an available certificate record for the course and subtracts 1 from the available quantity.
+     *
+     * @param int $course_id - The ID of the course to which the certificate belongs.
+     * @return bool Returns true if the certificate was issued, false otherwise.
+     */
+    function woocerti_issue_certificate($course_id) {
+        global $wpdb;
+        $certificates_table = $wpdb->prefix.'certificates';
+        $courses_table = $wpdb->prefix.'courses';
+
+        // 'quantity available > 0' is used to ensure that there are certificates to issue.
+        $certificate_record = $wpdb->get_row($wpdb->prepare("
+            SELECT c.id_certificate, c.quantity_available
+            FROM `$certificates_table` AS c
+            INNER JOIN `$courses_table` AS co ON c.id_course = co.id_course
+            WHERE c.id_course = %d AND c.quantity_available > 0
+            ORDER BY c.date_created ASC
+            LIMIT 1
+        ", $course_id));
+
+        if ($certificate_record) {
+            // Subtract 1 from the available amount of the certificate.
+            $new_quantity = $certificate_record->quantity_available - 1;
+
+            $wpdb->update(
+                $certificates_table,
+                array('quantity_available' => $new_quantity, 'date_updated' => current_time('mysql')),
+                array('id_certificate' => $certificate_record->id_certificate)
+            );
+
+            return true;
+        }
+
+        return false;
+    }
+
+    // // Example usage for 'woocerti_issue_certificate'
+    // if (woocerti_issue_certificate($course_id)) {
+    //     // Logic for a satisfactory answer
+    //     // 'Certificate issued successfully.'
+    // } else {
+    //     // Logic for a negative answer
+    //     // 'There are no certificates available for this course.'
+    // }
 
 }
