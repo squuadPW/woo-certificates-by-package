@@ -36,6 +36,8 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
             'tutor_instructor' => __('Tutor', 'woocertificatespackage'),
             'status' => __('Status', 'woocertificatespackage'),
             'price_per_student' => __('Price', 'woocertificatespackage'),
+            'purchased_certificates' => __('Purchased Certificates', 'woocertificatespackage'),
+            'certificates_issued' => __('Certificates Issued', 'woocertificatespackage'),
             'date_created' => __('Creation Date', 'woocertificatespackage'),
         ];
         return $columns;
@@ -90,14 +92,16 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
     }
 
     /**
-     * Prepare the data for the table.
+     * Prepare the data for the table, including purchased and issued certificates.
      */
     public function prepare_items() {
         global $wpdb;
-        $table_name = $wpdb->prefix.'courses';
+        // Define table names
+        $courses_table = $wpdb->prefix.'courses';
+        $certificates_table = $wpdb->prefix.'certificates';
 
-        $columns  = $this->get_columns();
-        $hidden   = [];
+        $columns = $this->get_columns();
+        $hidden = [];
         $sortable = $this->get_sortable_columns();
 
         $this->_column_headers = [$columns, $hidden, $sortable];
@@ -113,21 +117,34 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
         $status_filter = '';
         if (isset($_GET['status']) && $_GET['status'] !== 'all') {
             $status = sanitize_text_field($_GET['status']);
-            $status_filter = $wpdb->prepare(" AND status = %s", $status);
+            $status_filter = $wpdb->prepare(" AND co.status = %s", $status);
         } else {
             // The 'all' view excludes 'Draft' and 'Declined' courses
-            $status_filter = " AND status != 'Draft' AND status != 'Declined'";
+            $status_filter = " AND co.status != 'Draft' AND co.status != 'Declined'";
         }
+
         // Base query to obtain the items
-        $sql = "SELECT * FROM {$table_name} WHERE 1=1{$status_filter}";
+        // We join the tables to calculate purchased and issued certificates.
+        $sql = "SELECT co.*, SUM(cert.quantity_purchased) as purchased_certificates, (SUM(cert.quantity_purchased) - SUM(cert.quantity_available)) as certificates_issued
+                FROM {$courses_table} AS co
+                LEFT JOIN {$certificates_table} AS cert ON co.id_course = cert.id_course
+                WHERE 1=1{$status_filter}";
+        // Group by the course ID to aggregate certificate data
+        $sql .= " GROUP BY co.id_course";
         $sql .= " ORDER BY {$orderby} {$order}";
         $sql .= " LIMIT %d OFFSET %d";
         $this->items = $wpdb->get_results(
             $wpdb->prepare($sql, $per_page, $offset)
         );
 
-        // Gets the total number of items for pagination
-        $total_items = $wpdb->get_var("SELECT COUNT(id_course) FROM {$table_name} WHERE 1=1{$status_filter}");
+        // Get the total number of items for pagination
+        // The query now joins tables to count only courses with certificates
+        $total_items_sql = "SELECT COUNT(DISTINCT co.id_course)
+            FROM {$courses_table} AS co
+            LEFT JOIN {$certificates_table} AS cert ON co.id_course = cert.id_course
+            WHERE 1=1{$status_filter}";
+
+        $total_items = $wpdb->get_var($total_items_sql);
 
         $this->set_pagination_args([
             'total_items' => $total_items,
@@ -178,6 +195,18 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
                         break;
                 }
                 return esc_html($status_label);
+            case 'purchased_certificates':
+                if ($item->purchased_certificates) {
+                    return esc_html($item->purchased_certificates);
+                } else {
+                    return 0;
+                }
+            case 'certificates_issued':
+                if ($item->certificates_issued) {
+                    return esc_html($item->certificates_issued);
+                } else {
+                    return 0;
+                }
             default:
                 return print_r($item, true);
         }
