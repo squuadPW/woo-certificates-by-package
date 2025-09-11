@@ -20,8 +20,9 @@ class Woocerti_Public {
         // Render content for the custom endpoints.
         add_action('woocommerce_account_certificates_endpoint', array($this, 'render_certificates_content'));
         add_action('woocommerce_account_courses_endpoint', array($this, 'render_courses_content'));
+        add_action('woocommerce_account_issue-certificate_endpoint', array($this, 'render_issue_certificate_page'));
         // Handle form submissions for course CRUD operations.
-        add_action('template_redirect', array($this, 'handle_course_crud'));
+        add_action('template_redirect', array($this, 'handle_requests'));
         // Register custom endpoints.
         add_action('init', array($this, 'add_plugin_endpoints'));
         // Add custom query variables to handle pagination.
@@ -30,14 +31,29 @@ class Woocerti_Public {
         add_filter('woocommerce_add_cart_item_data', array($this, 'add_custom_data_to_cart_item'), 10, 2);
         // Overwrites the original price of the certified product, ensuring that the custom price is applied.
         add_action('woocommerce_before_calculate_totals', array($this, 'apply_custom_price_to_cart_item'), 10, 1);
-        // Allows you to modify the name of a product as it appears on the cart page.
-        add_filter('woocommerce_cart_item_name', array($this, 'display_course_name_in_cart'), 10, 2);
-        // Generates a personalized notification, right after a product has been added to the cart.
-        add_filter('wc_add_to_cart_message_html', array($this, 'add_custom_add_to_cart_notice'), 10, 2);
         // Save custom cart metadata to the order item at checkout.
         add_action('woocommerce_checkout_create_order_line_item', array($this, 'save_custom_data_to_order_item'), 10, 4);
         // New filter to display the course name on the order page
         add_filter('woocommerce_order_item_name', array($this, 'display_course_name_on_order'), 10, 2);
+        // Allows you to modify the name of a product as it appears on the cart page.
+        add_filter('woocommerce_cart_item_name', array($this, 'display_course_name_in_cart'), 10, 2);
+        // Generates a personalized notification, right after a product has been added to the cart.
+        add_filter('wc_add_to_cart_message_html', array($this, 'add_custom_add_to_cart_notice'), 10, 2);
+        // Correctly locates the template file, allowing a theme to override it.
+        add_filter('woocommerce_locate_template', array($this, 'woocerti_locate_template'), 10, 3);
+    }
+
+    /**
+     * Handles form submissions and redirects for all custom endpoints.
+     */
+    public function handle_requests() {
+        if (isset($_POST['course_nonce']) && wp_verify_nonce($_POST['course_nonce'], 'save_course_data')) {
+            $this->handle_course_crud();
+        }
+
+        if (isset($_POST['woocerti_issue_certificate_nonce']) && wp_verify_nonce($_POST['woocerti_issue_certificate_nonce'], 'woocerti_issue_certificate_action')) {
+            $this->handle_certificate_issuance();
+        }
     }
 
     /**
@@ -49,10 +65,26 @@ class Woocerti_Public {
         // Enqueue CSS file.
         wp_enqueue_style('woocerti-public-style', WOOCERTI_PLUGIN_URL.'public/assets/css/style.css', array(), $version, 'all');
         // Enqueue JS file.
-        wp_enqueue_script('woocerti-public-script', WOOCERTI_PLUGIN_URL.'public/assets/js/main.js', array('jquery'), $version, true);
+        wp_enqueue_style('woocerti-intl-tel-input-style', WOOCERTI_PLUGIN_URL.'public/assets/css/intlTelInput.min.css', array(), '25.10.6');
+
+        wp_enqueue_script('woocerti-intl-tel-input-script', WOOCERTI_PLUGIN_URL.'public/assets/js/libs/intlTelInput.min.js', array('jquery'), '25.10.6', true);
+
+        wp_enqueue_script('woocerti-public-script', WOOCERTI_PLUGIN_URL.'public/assets/js/main.js', array('jquery', 'woocerti-intl-tel-input-script'), $version, true);
+
         // Get the current logged-in user's data
         $current_user = wp_get_current_user();
         $user_name = $current_user->display_name;
+
+        // Get nationality data from a JSON file
+        $locales_path = WOOCERTI_PLUGIN_DIR.'public/assets/js/locales/es.json';
+        $nationalities = array();
+        if (file_exists($locales_path)) {
+            $json_data = file_get_contents($locales_path);
+            $locale_data = json_decode($json_data, true);
+            if (isset($locale_data['translation']['nationalities'])) {
+                $nationalities = $locale_data['translation']['nationalities'];
+            }
+        }
         // Pass messages and user data from PHP to JavaScript
         $data_to_pass = array(
             'messages' => array(
@@ -64,9 +96,25 @@ class Woocerti_Public {
                 'price_per_student_invalid' => __('The price must be a number greater than zero.', 'woocertificatespackage'),
                 'certification_fee_value_invalid' => __('The rate value must be a number greater than zero.', 'woocertificatespackage'),
                 'is_percentage_rate_valid' => __('The rate value cannot be greater than 100 if the type is "Percentage".', 'woocertificatespackage'),
+                'field_is_required' => __('This field is required.', 'woocertificatespackage'),
+                'email_invalid' => __('Please enter a valid email address.', 'woocertificatespackage'),
+                'file_is_empty' => __('Please select a file.', 'woocertificatespackage'),
+                'file_size_exceeded' => __('The file cannot be larger than 5 MB.', 'woocertificatespackage'),
+                'file_type_invalid' => __('Only Excel (.xls, .xlsx) or CSV files are accepted.', 'woocertificatespackage'),
+                'selected_file' => __('Selected file: ', 'woocertificatespackage'),
+                'document_type_required' => __('Please select a document type.', 'woocertificatespackage'),
+            ),
+            'iti_phone' => array(
+                'search_placeholder' => __('Search', 'woocertificatespackage'),
+                'no_country_selected' => __('Select country', 'woocertificatespackage'),
+                'country_list_aria_label' => __('List of countries', 'woocertificatespackage'),
+                'clear_search_aria_label' => __('Clear search', 'woocertificatespackage'),
+                'zero_search_results' => __('No results found', 'woocertificatespackage'),
             ),
             'user_name' => $user_name,
+            'woocerti_plugin_url' => WOOCERTI_PLUGIN_URL,
             'deleteConfirmText' => __('Are you sure you want to delete this course? This action cannot be undone.', 'woocertificatespackage'),
+            'nationalities' => $nationalities,
         );
         wp_localize_script('woocerti-public-script', 'woocerti_data', $data_to_pass);
     }
@@ -77,6 +125,7 @@ class Woocerti_Public {
     public function add_plugin_endpoints() {
         add_rewrite_endpoint('courses', EP_PAGES);
         add_rewrite_endpoint('certificates', EP_PAGES);
+        add_rewrite_endpoint('issue-certificate', EP_PAGES);
     }
 
     /**
@@ -87,6 +136,7 @@ class Woocerti_Public {
      */
     public function add_plugin_query_vars($vars) {
         $vars[] = 'pageds';
+        $vars[] = 'action';
         return $vars;
     }
 
@@ -674,12 +724,159 @@ class Woocerti_Public {
     }
 
     /**
+     * Finds and loads the correct template file, allowing a theme to override it.
+     *
+     * @param string $template - The template file path.
+     * @param string $template_name - The name of the template being loaded.
+     * @param string $template_path - The path to search for the template file.
+     * @return string The path to the template file.
+     */
+    public function woocerti_locate_template($template, $template_name, $template_path) {
+        $_template = $template;
+
+        if (!$template_path) {
+            $template_path = WC()->template_path();
+        }
+
+        // We search for the template in the plugin's template folder.
+        $plugin_template_path = WOOCERTI_PLUGIN_DIR.'public/templates/'.$template_name;
+
+        // Check if the template exists in the theme.
+        $template = locate_template(
+            array(
+                $template_path.$template_name,
+                $template_name
+            )
+        );
+
+        // If the template is not found in the theme, load it from the plugin's folder.
+        if (!$template && file_exists($plugin_template_path)) {
+            $template = $plugin_template_path;
+        }
+
+        // Return the found template path.
+        if (!$template) {
+            $template = $_template;
+        }
+
+        return $template;
+    }
+
+    /**
+     * Renders the page for issuing certificates, including the form and the results table.
+     */
+    public function render_issue_certificate_page() {
+        $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : '';
+        $course_id = isset($_GET['course_id']) ? intval($_GET['course_id']) : 0;
+
+        if (empty($course_id)) {
+            wc_print_notice(__('Course not found.', 'woocertificatespackage'), 'error');
+            return;
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix.'courses';
+        $course_name = $wpdb->get_var($wpdb->prepare("SELECT course_name FROM {$table_name} WHERE id_course = %d", $course_id));
+
+        if ($action === 'list_issued') {
+            $issued_students = get_transient('woocerti_issued_students_'.get_current_user_id());
+
+            wc_get_template(
+                'issued-certificates-list.php',
+                array(
+                    'students' => $issued_students,
+                    'course_name' => $course_name
+                )
+            );
+
+            delete_transient('woocerti_issued_students_'.get_current_user_id());
+        } else {
+            wc_get_template(
+                'issue-certificate-form.php',
+                array(
+                    'course_id' => $course_id,
+                    'course_name' => $course_name
+                )
+            );
+        }
+    }
+
+    /**
+     * Handles the processing of forms for issuing certificates, either individually or via Excel.
+     */
+    public function handle_certificate_issuance() {
+        $user_id = get_current_user_id();
+        $course_id = isset($_POST['course_id']) ? intval($_POST['course_id']) : 0;
+        $issued_students = [];
+
+        if (isset($_FILES['student_list']) && $_FILES['student_list']['error'] === UPLOAD_ERR_OK) {
+            $file = fopen($_FILES['student_list']['tmp_name'], 'r');
+            while (($data = fgetcsv($file, 1000, ",")) !== FALSE) {
+                // Assuming the CSV format is: first_name, last_name, email, document_number
+                $student_first_name = sanitize_text_field($data[0]);
+                $student_last_name = sanitize_text_field($data[1]);
+                $student_email = sanitize_email($data[2]);
+                $student_document_number = sanitize_text_field($data[3]);
+
+                if ($this->woocerti_issue_certificate($course_id)) {
+                    $issued_students[] = array(
+                        'first_name' => $student_first_name,
+                        'last_name' => $student_last_name,
+                        'email' => $student_email,
+                        'document_number' => $student_document_number,
+                        'status' => 'issued'
+                    );
+                } else {
+                    $issued_students[] = array(
+                        'first_name' => $student_first_name,
+                        'last_name' => $student_last_name,
+                        'email' => $student_email,
+                        'document_number' => $student_document_number,
+                        'status' => 'failed'
+                    );
+                }
+            }
+            fclose($file);
+        } elseif (isset($_POST['single_student_first_name'])) {
+            $student_first_name = sanitize_text_field($_POST['single_student_first_name']);
+            $student_last_name = sanitize_text_field($_POST['single_student_last_name']);
+            $student_email = sanitize_email($_POST['single_student_email']);
+            $student_document_number = sanitize_text_field($_POST['single_student_document_number']);
+
+            if ($this->woocerti_issue_certificate($course_id)) {
+                $issued_students[] = array(
+                    'first_name' => $student_first_name,
+                    'last_name' => $student_last_name,
+                    'email' => $student_email,
+                    'document_number' => $student_document_number,
+                    'status' => 'issued'
+                );
+            } else {
+                $issued_students[] = array(
+                    'first_name' => $student_first_name,
+                    'last_name' => $student_last_name,
+                    'email' => $student_email,
+                    'document_number' => $student_document_number,
+                    'status' => 'failed'
+                );
+            }
+        }
+
+        set_transient('woocerti_issued_students_'.$user_id, $issued_students, 60 * 5); // Stores for 5 minutes.
+
+        $redirect_url = wc_get_account_endpoint_url('issue-certificate');
+        $redirect_url = add_query_arg(array('action' => 'list_issued', 'course_id' => $course_id), $redirect_url);
+        wp_safe_redirect($redirect_url);
+        exit;
+    }
+
+    /**
      * Finds an available certificate record for the course and subtracts 1 from the available quantity.
      *
      * @param int $course_id - The ID of the course to which the certificate belongs.
      * @return bool Returns true if the certificate was issued, false otherwise.
      */
-    function woocerti_issue_certificate($course_id) {
+    public function woocerti_issue_certificate($course_id) {
         global $wpdb;
         $certificates_table = $wpdb->prefix.'certificates';
         $courses_table = $wpdb->prefix.'courses';
@@ -711,7 +908,7 @@ class Woocerti_Public {
     }
 
     // // Example usage for 'woocerti_issue_certificate'
-    // if (woocerti_issue_certificate($course_id)) {
+    // if ($this->woocerti_issue_certificate($course_id)) {
     //     // Logic for a satisfactory answer
     //     // 'Certificate issued successfully.'
     // } else {

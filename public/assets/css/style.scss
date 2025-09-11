@@ -37,6 +37,10 @@
                     background-repeat: no-repeat;
                     background-position: right 10px center;
                 }
+
+                .iti {
+                    width: 100%;
+                }
             }
         }
 
@@ -139,4 +143,89 @@
     .validation-message {
         visibility: visible;
     }
+}
+
+/* Style for the "Issue Certificate" button dropdown */
+.woocerti-dropdown {
+    position: relative;
+    display: inline-block;
+
+    .woocerti-issue-button {
+        position: relative;
+        padding-right: 30px !important;
+
+        &::after {
+            content: '\23F7';
+            font-size: 15px;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: inline-block;
+        }
+    }
+
+    .woocerti-dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 200px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        top: 100%;
+        margin-top: 5px;
+
+        a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none !important;
+            display: block;
+            text-transform: capitalize;
+
+            &:hover {
+                background-color: #f1f1f1;
+            }
+        }
+    }
+}
+
+/* ====================================================================
+ * Styles for the bulk upload form
+ * ====================================================================
+ */
+#file-drop-area {
+    border: 2px dashed #ccc;
+    padding: 2em;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 150px; // Asegura una altura mínima para el área de drop
+
+    &:hover {
+        background-color: #f8f8f8;
+    }
+
+    &.dragover {
+        background-color: #e8e8e8;
+        border-color: #3498db;
+    }
+
+    p {
+        margin: 0.5em 0;
+        color: #777;
+        line-height: 1.5;
+    }
+}
+
+.file-name-display {
+    display: block;
+    margin-top: 1em;
+    font-weight: bold;
+    color: #3498db;
 }

@@ -1,3 +1,4 @@
+@charset "UTF-8";
 .woocommerce-MyAccount-navigation ul li.woocommerce-MyAccount-navigation-link--certificates a:before {
   content: "\f559";
 }
@@ -35,6 +36,9 @@
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>');
   background-repeat: no-repeat;
   background-position: right 10px center;
+}
+.woocommerce-MyAccount-content form .form-row .form-row-field .iti {
+  width: 100%;
 }
 .woocommerce-MyAccount-content form .p-buttons .button {
   margin-right: 1em;
@@ -108,4 +112,81 @@
 }
 .woocommerce-MyAccount-content form .validation-message {
   visibility: visible;
+}
+
+/* Style for the "Issue Certificate" button dropdown */
+.woocerti-dropdown {
+  position: relative;
+  display: inline-block;
+}
+.woocerti-dropdown .woocerti-issue-button {
+  position: relative;
+  padding-right: 30px !important;
+}
+.woocerti-dropdown .woocerti-issue-button::after {
+  content: "⏷";
+  font-size: 15px;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-block;
+}
+.woocerti-dropdown .woocerti-dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 200px;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  top: 100%;
+  margin-top: 5px;
+}
+.woocerti-dropdown .woocerti-dropdown-content a {
+  color: #333;
+  padding: 12px 16px;
+  text-decoration: none !important;
+  display: block;
+  text-transform: capitalize;
+}
+.woocerti-dropdown .woocerti-dropdown-content a:hover {
+  background-color: #f1f1f1;
+}
+
+/* ====================================================================
+ * Styles for the bulk upload form
+ * ====================================================================
+ */
+#file-drop-area {
+  border: 2px dashed #ccc;
+  padding: 2em;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 150px;
+}
+#file-drop-area:hover {
+  background-color: #f8f8f8;
+}
+#file-drop-area.dragover {
+  background-color: #e8e8e8;
+  border-color: #3498db;
+}
+#file-drop-area p {
+  margin: 0.5em 0;
+  color: #777;
+  line-height: 1.5;
+}
+
+.file-name-display {
+  display: block;
+  margin-top: 1em;
+  font-weight: bold;
+  color: #3498db;
 }/*# sourceMappingURL=style.css.map */
