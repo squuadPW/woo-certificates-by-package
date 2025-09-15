@@ -417,12 +417,44 @@ class Woocerti_Activator {
             KEY `idx_id_course` (`id_course`)
         ) $charset_collate;";
 
+        // Define the SQL query to create the Participants table with the unique key.
+        $sql_participants = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}participants` (
+            `id_participant` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            `first_name` VARCHAR(255) NOT NULL,
+            `last_name` VARCHAR(255) NOT NULL,
+            `document_type` VARCHAR(50) NOT NULL,
+            `document_number` VARCHAR(255) NOT NULL,
+            `inssued_in` VARCHAR(255) NOT NULL,
+            `email` VARCHAR(255) NOT NULL,
+            `phone_number` VARCHAR(255) NULL,
+            `date_created` DATETIME NOT NULL,
+            `date_updated` DATETIME NOT NULL,
+            PRIMARY KEY (`id_participant`),
+            UNIQUE KEY `unique_document_full_info` (`document_type`, `inssued_in`, `document_number`)
+        ) $charset_collate;";
+
+        // Define the SQL query to create the CourseParticipants intermediate table.
+        $sql_course_participants = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}course_participants` (
+            `id_course_participant` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            `id_course` BIGINT(20) UNSIGNED NOT NULL,
+            `id_participant` BIGINT(20) UNSIGNED NOT NULL,
+            `date_created` DATETIME NOT NULL,
+            `date_updated` DATETIME NOT NULL,
+            PRIMARY KEY (`id_course_participant`),
+            KEY `idx_id_course` (`id_course`),
+            KEY `idx_id_participant` (`id_participant`),
+            FOREIGN KEY (`id_course`) REFERENCES `{$wpdb->prefix}courses`(`id_course`) ON DELETE CASCADE,
+            FOREIGN KEY (`id_participant`) REFERENCES `{$wpdb->prefix}participants`(`id_participant`) ON DELETE CASCADE
+        ) $charset_collate;";
+
         // Include the upgrade.php file to use the dbDelta() function
         require_once(ABSPATH.'wp-admin/includes/upgrade.php');
 
-        // Use dbDelta to create the table. It's safe and handles updates.
+        // Use dbDelta to create the tables. It's safe and handles updates.
         dbDelta($sql_courses);
         dbDelta($sql_certificates);
+        dbDelta($sql_participants);
+        dbDelta($sql_course_participants);
     }
 
     /**

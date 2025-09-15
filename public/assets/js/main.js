@@ -181,89 +181,6 @@ jQuery(document).ready(function($) {
     });
 
     //----------------------------------------------------//
-    // Custom validation for the "Issue Certificate" form
-    //----------------------------------------------------//
-    const issueForm = $('#issue-single-student-form');
-    if (issueForm.length) {
-
-        // Function to validate a single field
-        function validateFieldIssue(field) {
-            let isValid = true;
-            let errorMessage = '';
-            const fieldId = field.attr('id');
-            const fieldValue = field.val();
-            const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-
-            // Reset error state
-            field.removeClass('input-error');
-            field.closest('.form-row-field').find('.validation-message').text('').hide();
-
-            // Validation logic based on field ID
-            switch (fieldId) {
-                case 'single_student_first_name':
-                case 'single_student_last_name':
-                case 'single_student_document_number':
-                    if ($.trim(fieldValue) === '') {
-                        isValid = false;
-                        errorMessage = woocerti_data.messages.field_is_required;
-                    }
-                    break;
-                case 'single_student_inssued_in':
-                    if ($.trim(fieldValue) === '') {
-                        isValid = false;
-                        errorMessage = woocerti_data.messages.field_is_required;
-                    }
-                    break;
-                case 'single_student_document_type':
-                    if ($.trim(fieldValue) === '') {
-                        isValid = false;
-                        errorMessage = woocerti_data.messages.document_type_required;
-                    }
-                    break;
-                case 'single_student_email':
-                    if ($.trim(fieldValue) === '') {
-                        isValid = false;
-                        errorMessage = woocerti_data.messages.field_is_required;
-                    } else if (!emailRegex.test(fieldValue)) {
-                        isValid = false;
-                        errorMessage = woocerti_data.messages.email_invalid;
-                    }
-                    break;
-            }
-
-            // Show or hide the error message
-            if (!isValid) {
-                field.addClass('input-error');
-                field.closest('.form-row-field').find('.validation-message').text(errorMessage).show();
-            } else {
-                field.removeClass('input-error');
-                field.closest('.form-row-field').find('.validation-message').text('').hide();
-            }
-
-            return isValid;
-        }
-
-        // Validate on field change
-        issueForm.find('input').on('change', function() {
-            validateFieldIssue($(this));
-        });
-
-        // Validate on form submission
-        issueForm.on('submit', function(e) {
-            let formIsValid = true;
-            issueForm.find('input').each(function() {
-                if (!validateFieldIssue($(this))) {
-                    formIsValid = false;
-                }
-            });
-
-            if (!formIsValid) {
-                e.preventDefault();
-            }
-        });
-    }
-
-    //----------------------------------------------------//
     // Drag and Drop for Bulk Upload
     //----------------------------------------------------//
     const fileDropArea = $('#file-drop-area');
@@ -380,27 +297,6 @@ jQuery(document).ready(function($) {
     }
 
     //----------------------------------------------------//
-    // Lógica para mostrar/ocultar el campo "Issued In?"
-    //----------------------------------------------------//
-    const documentTypeSelect = $('#single_student_document_type');
-    const nationalityContainer = $('#nationality-container');
-
-    if (documentTypeSelect.length && nationalityContainer.length) {
-        const toggleNationalityField = () => {
-            const selectedValue = documentTypeSelect.val();
-            if (selectedValue === 'identification_document') {
-                nationalityContainer.show();
-            } else {
-                nationalityContainer.hide();
-            }
-        };
-
-        documentTypeSelect.on('change', toggleNationalityField);
-
-        toggleNationalityField();
-    }
-
-    //----------------------------------------------------//
     // intlTelInput Initialization
     //----------------------------------------------------//
     if (typeof woocerti_data !== 'undefined' && woocerti_data.nationalities) {
@@ -428,51 +324,238 @@ jQuery(document).ready(function($) {
         }
     }
 
+    //----------------------------------------------------//
+    // Custom validation for the "Issue Certificate" form
+    //----------------------------------------------------//
+    const issueForm = $('#issue-single-student-form');
+    const responseMessageContainer = $('#woocerti-response-message');
+    const submitButton = issueForm.find('.woocerti-issue-submit');
+    const documentTypeSelect = $('#single_student_document_type');
+    const nationalityContainer = $('#nationality-container');
+    const formRowFields = $('.form-row--three-fields .form-row-field');
     const phoneInput = document.querySelector("#phone_number");
-    if (phoneInput) {
-        const iti = window.intlTelInput(phoneInput, {
-            nationalMode: true,
-            initialCountry: "auto",
-            separateDialCode: true,
-            strictMode: true,
-            loadUtils: () => import(woocerti_data.woocerti_plugin_url + 'public/assets/js/libs/utils.js'),
-            hiddenInput: (telInputName) => ({
-                phone: "phone_full",
-                country: "country_code"
-            }),
-            geoIpLookup: callback => {
-                fetch("https://ipapi.co/json")
-                    .then(res => res.json())
-                    .then(data => callback(data.country_code))
-                    .catch(() => callback("us"));
-            },
-            allowPhonewords: true,
-            i18n: {
-                searchPlaceholder: woocerti_data.iti_phone.search_placeholder,
-                noCountrySelected: woocerti_data.iti_phone.no_country_selected,
-                countryListAriaLabel: woocerti_data.iti_phone.country_list_aria_label,
-                clearSearchAriaLabel: woocerti_data.iti_phone.clear_search_aria_label,
-                zeroSearchResults: woocerti_data.iti_phone.zero_search_results,
-            }
+    let iti = null;
+
+    // Displays a message on the interface
+    const showMessage = (messages, type = 'error') => {
+        responseMessageContainer.html('');
+        const ul = $('<ul></ul>').addClass(`woocerti-${type}-messages`);
+        messages.forEach(msg => {
+            ul.append(`<li class="${type}-message">${msg}</li>`);
         });
 
-        phoneInput.addEventListener("blur", function() {
-            if (phoneInput.value.trim()) {
-                if (iti.isValidNumber()) {
-                    console.log("Número de teléfono válido:", iti.getNumber());
+        responseMessageContainer.append(ul).fadeIn();
+    };
+
+    if (issueForm.length) {
+        // Initialize intl-tel-input for the phone number field
+        if (phoneInput && typeof woocerti_data.iti_phone !== 'undefined') {
+            iti = window.intlTelInput(phoneInput, {
+                // nationalMode: true,
+                initialCountry: "auto",
+                separateDialCode: true,
+                strictMode: true,
+                loadUtils: () => import(woocerti_data.woocerti_plugin_url + 'public/assets/js/libs/utils.js'),
+                hiddenInput: (telInputName) => ({
+                    phone: "phone_full",
+                    country: "country_code"
+                }),
+                geoIpLookup: callback => {
+                    fetch("https://ipapi.co/json")
+                        .then(res => res.json())
+                        .then(data => callback(data.country_code))
+                        .catch(() => callback("us"));
+                },
+                allowPhonewords: true,
+                i18n: {
+                    searchPlaceholder: woocerti_data.iti_phone.search_placeholder,
+                    noCountrySelected: woocerti_data.iti_phone.no_country_selected,
+                    countryListAriaLabel: woocerti_data.iti_phone.country_list_aria_label,
+                    clearSearchAriaLabel: woocerti_data.iti_phone.clear_search_aria_label,
+                    zeroSearchResults: woocerti_data.iti_phone.zero_search_results,
+                }
+            });
+        }
+
+        // Function for print Error return submit
+        function printError(field, message) {
+            field.removeClass('input-error');
+            field.closest('.form-row-field').find('.validation-message').text('').hide();
+            field.addClass('input-error');
+            field.closest('.form-row-field').find('.validation-message').text(message).show();
+        }
+
+        // Function to validate a single field
+        function validateFieldIssue(field) {
+            let isValid = true;
+            let errorMessage = '';
+            const fieldId = field.attr('id');
+            const fieldValue = field.val();
+            const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+            const documentType = $('#single_student_document_type').val();
+
+            // Reset error state
+            field.removeClass('input-error');
+            field.closest('.form-row-field').find('.validation-message').text('').hide();
+
+            // Validation logic based on field ID
+            switch (fieldId) {
+                case 'single_student_first_name':
+                case 'single_student_last_name':
+                case 'single_student_document_number':
+                    if ($.trim(fieldValue) === '') {
+                        isValid = false;
+                        errorMessage = woocerti_data.messages.field_is_required;
+                    }
+                    break;
+                case 'single_student_document_type':
+                    const allowedTypes = ['passport', 'identification_document', 'ssn'];
+                    if ($.trim(fieldValue) === '' || !allowedTypes.includes(fieldValue)) {
+                        isValid = false;
+                        errorMessage = woocerti_data.messages.document_type_required;
+                    }
+                    break;
+                case 'single_student_inssued_in':
+                    if (documentType === 'identification_document') {
+                        let trimmedValue = (typeof fieldValue === 'string') ? $.trim(fieldValue) : '';
+                        if (trimmedValue === '' || (typeof woocerti_data.nationalities !== 'object' || !woocerti_data.nationalities.hasOwnProperty(trimmedValue.toUpperCase()))) {
+                            isValid = false;
+                            errorMessage = woocerti_data.messages.field_is_required;
+                        }
+                    }
+                    break;
+                case 'single_student_email':
+                    if ($.trim(fieldValue) === '') {
+                        isValid = false;
+                        errorMessage = woocerti_data.messages.field_is_required;
+                    } else if (!emailRegex.test(fieldValue)) {
+                        isValid = false;
+                        errorMessage = woocerti_data.messages.email_invalid;
+                    }
+                    break;
+                case 'phone_number':
+                    if ($.trim(fieldValue) !== '' && iti && !iti.isValidNumber()) {
+                        isValid = false;
+                        errorMessage = woocerti_data.messages.phone_number_invalid;
+                    }
+                    break;
+            }
+
+            // Show or hide the error message
+            if (!isValid) {
+                field.addClass('input-error');
+                field.closest('.form-row-field').find('.validation-message').text(errorMessage).show();
+            } else {
+                field.removeClass('input-error');
+                field.closest('.form-row-field').find('.validation-message').text('').hide();
+            }
+
+            return isValid;
+        }
+
+        if (documentTypeSelect.length && nationalityContainer.length) {
+            const toggleNationalityField = () => {
+                const selectedValue = documentTypeSelect.val();
+                // Reset the 'issued in' field
+                $('#single_student_inssued_in').val('');
+                if (selectedValue === 'identification_document') {
+                    // Show the field if 'identification_document' is selected
+                    nationalityContainer.show();
                 } else {
-                    console.log("Número de teléfono inválido");
+                    // Hide the field for other values
+                    nationalityContainer.hide();
+                }
+
+                // Update the CSS to manage the last-child margin
+                updateFieldClasses(selectedValue === 'identification_document');
+            };
+
+            documentTypeSelect.on('change', toggleNationalityField);
+
+            // Function to update CSS classes dynamically
+            function updateFieldClasses(isThreeFieldsVisible) {
+                formRowFields.removeClass('no-margin-right');
+                if (!isThreeFieldsVisible) {
+                    // If only two fields are visible, add a class to the second one
+                    if (formRowFields.length > 1) {
+                        formRowFields.eq(1).addClass('no-margin-right');
+                    }
                 }
             }
+
+            toggleNationalityField();
+        }
+
+        // Validate on field change
+        issueForm.find('input, select').on('change', function() {
+            validateFieldIssue($(this));
         });
 
-        // function handleChange(){
-        //     $("#number_phone_hidden").val(iti_number_phone.getNumber());
-        // }
+        // Validate on form submission
+        issueForm.on('submit', function(e) {
+            e.preventDefault();
+            let formIsValid = true;
 
-        // phoneInput.addEventListener('change',handleChange);
-        // phoneInput.addEventListener('keyup', handleChange);
+            // Set the value of the 'issued in' field before validation
+            const documentType = $('#single_student_document_type').val();
+            if (documentType !== 'identification_document') {
+                $('#single_student_inssued_in').val('US').attr('required', false);
+            } else {
+                 $('#single_student_inssued_in').attr('required', true);
+            }
+
+            // Validate all required fields
+            const requiredFields = [
+                'single_student_document_type',
+                'single_student_document_number',
+                'single_student_first_name',
+                'single_student_last_name',
+                'single_student_email',
+                'phone_number'
+            ];
+
+            requiredFields.forEach(function(fieldId) {
+                const field = $('#' + fieldId);
+                if (!validateFieldIssue(field)) {
+                    formIsValid = false;
+                }
+            });
+
+            if (!formIsValid) {
+                // If the validation on the client fails, the request is not sent.
+                return;
+            }
+
+            // Displays the charging status and disables the button
+            submitButton.text(woocerti_data.text_forms.txt_btn_issuing).prop('disabled', true);
+            responseMessageContainer.fadeOut();
+
+            const formData = issueForm.serialize();
+            const ajaxData = formData + '&action=woocerti_issue_single_certificate';
+
+            $.post(woocerti_data.ajax_url, ajaxData, function(resp) {
+                submitButton.prop('disabled', false).text(woocerti_data.text_forms.btn_submit_issue_certificate);
+
+                if (resp.success) {
+                    showMessage([resp.data.message], 'success');
+                    // Opcional: limpiar el formulario
+                    issueForm.trigger('reset');
+                } else {
+                    if (resp.data && resp.data.messages) {
+                        showMessage(resp.data.messages, 'error');
+                    }
+                    if (resp.data && resp.data.validations) {
+                        Object.entries(resp.data.validations).forEach(([key, value]) => {
+                            const field = $('#' + key);
+                            printError(field, value);
+                        });
+                    }
+                }
+            }).fail(function() {
+                submitButton.prop('disabled', false).text(woocerti_data.text_forms.btn_submit_issue_certificate);
+                showMessage([woocerti_data.messages.ajax_error]);
+            });
+        });
     }
 
-    // console.log("WOOCERTI_COUNTRIES: ",WOOCERTI_COUNTRIES);
 });
