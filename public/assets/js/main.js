@@ -181,122 +181,6 @@ jQuery(document).ready(function($) {
     });
 
     //----------------------------------------------------//
-    // Drag and Drop for Bulk Upload
-    //----------------------------------------------------//
-    const fileDropArea = $('#file-drop-area');
-    const fileInput = $('#student_list');
-    const fileNameDisplay = $('.file-name-display');
-    const selectFilesButton = $('.woocerti-select-files-button');
-
-    if (fileDropArea.length && fileInput.length) {
-        // Prevent default drag behaviors
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            fileDropArea.on(eventName, function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            });
-        });
-
-        // Highlight drop area when file is dragged over it
-        ['dragenter', 'dragover'].forEach(eventName => {
-            fileDropArea.on(eventName, function() {
-                fileDropArea.addClass('dragover');
-            });
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            fileDropArea.on(eventName, function() {
-                fileDropArea.removeClass('dragover');
-            });
-        });
-
-        // Handle dropped files
-        fileDropArea.on('drop', function(e) {
-            const droppedFiles = e.originalEvent.dataTransfer.files;
-            if (droppedFiles.length > 0) {
-                fileInput.prop('files', droppedFiles);
-                updateFileName(droppedFiles[0]);
-                validateFileSelection(fileInput); // Validate when dropping the file
-            }
-        });
-
-        // Handle click on the custom select files button
-        selectFilesButton.on('click', function() {
-            fileInput.click();
-        });
-
-        // Handle file selection from the dialog
-        fileInput.on('change', function() {
-            updateFileName(this.files[0]);
-            validateFileSelection(fileInput); // Validate when selecting file
-        });
-
-        // Helper function to update the file name display
-        function updateFileName(file) {
-            if (file) {
-                fileNameDisplay.text(woocerti_data.messages.selected_file + file.name);
-            } else {
-                fileNameDisplay.text('');
-            }
-        }
-
-        // Function to validate file selection for bulk upload
-        function validateFileSelection(fileField) {
-            let isValid = true;
-            let errorMessage = '';
-            const maxFileSize = 5 * 1024 * 1024; // 5 MB in bytes
-
-            if (!fileField[0].files || fileField[0].files.length === 0) {
-                isValid = false;
-                errorMessage = woocerti_data.messages.file_is_empty;
-            } else {
-                const file = fileField[0].files[0];
-                const fileExtension = file.name.split('.').pop().toLowerCase();
-                const fileMimeType = file.type;
-                // Define the allowed extensions and MIME types.
-                const allowedExtensions = ['csv', 'xls', 'xlsx'];
-                const allowedMimeTypes = [
-                    'text/csv',
-                    'application/vnd.ms-excel',
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                ];
-
-                if (file.size > maxFileSize) {
-                    isValid = false;
-                    errorMessage = woocerti_data.messages.file_size_exceeded;
-                }
-                if (isValid && (!allowedExtensions.includes(fileExtension) || !allowedMimeTypes.includes(fileMimeType))) {
-                    isValid = false;
-                    errorMessage = woocerti_data.messages.file_type_invalid;
-                }
-            }
-
-            const validationMessageSpan = fileField.nextAll('.validation-message:first');
-            if (!isValid) {
-                fileField.addClass('input-error');
-                fileDropArea.addClass('input-error');
-                validationMessageSpan.text(errorMessage).show();
-            } else {
-                fileField.removeClass('input-error');
-                fileDropArea.removeClass('input-error');
-                validationMessageSpan.text('').hide();
-            }
-            return isValid;
-        }
-
-        // Attach validation to the bulk upload form submission
-        const bulkUploadForm = $('.woocerti-bulk-upload form');
-        if (bulkUploadForm.length) {
-            bulkUploadForm.on('submit', function(e) {
-                // Validate the file input specifically
-                if (!validateFileSelection(fileInput)) {
-                    e.preventDefault();
-                }
-            });
-        }
-    }
-
-    //----------------------------------------------------//
     // intlTelInput Initialization
     //----------------------------------------------------//
     if (typeof woocerti_data !== 'undefined' && woocerti_data.nationalities) {
@@ -379,8 +263,6 @@ jQuery(document).ready(function($) {
 
         // Function for print Error return submit
         function printError(field, message) {
-            field.removeClass('input-error');
-            field.closest('.form-row-field').find('.validation-message').text('').hide();
             field.addClass('input-error');
             field.closest('.form-row-field').find('.validation-message').text(message).show();
         }
@@ -557,5 +439,167 @@ jQuery(document).ready(function($) {
             });
         });
     }
+
+    //----------------------------------------------------//
+    // Lógica para el formulario de carga masiva
+    //----------------------------------------------------//
+    const bulkUploadForm = $('#woocerti-bulk-upload-form');
+    const fileDropArea = $('#file-drop-area');
+    const fileInput = $('#student_list');
+    const fileNameDisplay = $('.file-name-display');
+    const selectFilesButton = $('.woocerti-select-files-button');
+
+    if (bulkUploadForm.length) {
+        if (fileDropArea.length && fileInput.length) {
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                fileDropArea.on(eventName, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+            });
+
+            // Highlight drop area when file is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                fileDropArea.on(eventName, function() {
+                    fileDropArea.addClass('dragover');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                fileDropArea.on(eventName, function() {
+                    fileDropArea.removeClass('dragover');
+                });
+            });
+
+            // Handle dropped files
+            fileDropArea.on('drop', function(e) {
+                const droppedFiles = e.originalEvent.dataTransfer.files;
+                if (droppedFiles.length > 0) {
+                    fileInput.prop('files', droppedFiles);
+                    updateFileName(droppedFiles[0]);
+                    validateFileSelection(fileInput);
+                }
+            });
+
+            // Handle click on the custom select files button
+            selectFilesButton.on('click', function() {
+                fileInput.click();
+            });
+
+            // Handle file selection from the dialog
+            fileInput.on('change', function() {
+                updateFileName(this.files[0]);
+                validateFileSelection(fileInput);
+            });
+
+            // Helper function to update the file name display
+            function updateFileName(file) {
+                if (file) {
+                    fileNameDisplay.text(woocerti_data.messages.selected_file + file.name);
+                } else {
+                    fileNameDisplay.text('');
+                }
+            }
+
+            // Function to validate file selection for bulk upload
+            function validateFileSelection(fileField) {
+                let isValid = true;
+                let errorMessage = '';
+                const maxFileSize = 5 * 1024 * 1024; // 5 MB in bytes
+
+                if (!fileField[0].files || fileField[0].files.length === 0) {
+                    isValid = false;
+                    errorMessage = woocerti_data.messages.file_is_empty;
+                } else {
+                    const file = fileField[0].files[0];
+                    const fileExtension = file.name.split('.').pop().toLowerCase();
+                    const fileMimeType = file.type;
+                    // Define the allowed extensions and MIME types.
+                    const allowedExtensions = ['csv', 'xls', 'xlsx'];
+                    const allowedMimeTypes = [
+                        'text/csv',
+                        'application/vnd.ms-excel',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    ];
+
+                    if (file.size > maxFileSize) {
+                        isValid = false;
+                        errorMessage = woocerti_data.messages.file_size_exceeded;
+                    }
+                    if (isValid && (!allowedExtensions.includes(fileExtension) || !allowedMimeTypes.includes(fileMimeType))) {
+                        isValid = false;
+                        errorMessage = woocerti_data.messages.file_type_invalid;
+                    }
+                }
+
+                const validationMessageSpan = fileField.nextAll('.validation-message:first');
+                if (!isValid) {
+                    fileField.addClass('input-error');
+                    fileDropArea.addClass('input-error');
+                    validationMessageSpan.text(errorMessage).show();
+                } else {
+                    fileField.removeClass('input-error');
+                    fileDropArea.removeClass('input-error');
+                    validationMessageSpan.text('').hide();
+                }
+                return isValid;
+            }
+
+            bulkUploadForm.on('submit', function(e) {
+                // Validate the file input specifically
+                if (!validateFileSelection(fileInput)) {
+                    e.preventDefault();
+                }
+            });
+        }
+    }
+
+    //----------------------------------------------------//
+    // Logic to display bulk load results
+    //----------------------------------------------------//
+    const bulkResultsContainer = $('#woocerti-bulk-results');
+    if (bulkResultsContainer.length) {
+        const results = JSON.parse(bulkResultsContainer.attr('data-results'));
+
+        console.log("RESULTS: ", results);
+
+        if (results && results.issued_count > 0) {
+            showMessage([results.general_messages[0]], 'success');
+        } else if (results && results.failed_count > 0) {
+            showMessage([results.general_messages[0]], 'error');
+        }
+
+        // Build the detailed results table
+        const detailedResultsTable = bulkResultsContainer.find('table tbody');
+        results.detailed_results.forEach(student => {
+            const row = $('<tr></tr>');
+            row.append(`<td>${student.row_number}</td>`);
+            row.append(`<td>${student.data.first_name} ${student.data.last_name}</td>`);
+
+            const statusCell = $('<td></td>');
+            if (student.status === 'issued') {
+                statusCell.append('<span class="status-issued">Issued</span>');
+            } else {
+                statusCell.append('<span class="status-failed">Failed</span>');
+            }
+            row.append(statusCell);
+
+            const messageCell = $('<td></td>');
+            if (student.status === 'issued') {
+                messageCell.text(student.message);
+            } else {
+                const errorsList = $('<ul></ul>').addClass('error-list');
+                student.errors.forEach(err => {
+                    errorsList.append(`<li>${err}</li>`);
+                });
+                messageCell.append(errorsList);
+            }
+            row.append(messageCell);
+
+            detailedResultsTable.append(row);
+        });
+    }
+
 
 });

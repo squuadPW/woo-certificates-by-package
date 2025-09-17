@@ -106,6 +106,20 @@
     }
 }
 
+.woocerti-collapsible-info {
+    summary {
+        cursor: pointer;
+    }
+}
+
+.woocerti-bulk-upload {
+    #woocerti-bulk-upload-form {
+        .description {
+            margin-bottom: 0;
+        }
+    }
+}
+
 /* Media query for smaller screens (mobile mode) */
 @media (max-width: 768px) {
     .woocommerce-MyAccount-content form {

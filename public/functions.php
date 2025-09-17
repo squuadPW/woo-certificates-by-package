@@ -4,6 +4,8 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
+require WOOCERTI_PLUGIN_DIR.'vendor/autoload.php';
+
 /**
  * Class to handle the public-facing side of the plugin.
  */
@@ -80,16 +82,8 @@ class Woocerti_Public {
         $current_user = wp_get_current_user();
         $user_name = $current_user->display_name;
 
-        // Get nationality data from a JSON file
-        $locales_path = WOOCERTI_PLUGIN_DIR.'public/assets/js/locales/es.json';
-        $nationalities = array();
-        if (file_exists($locales_path)) {
-            $json_data = file_get_contents($locales_path);
-            $locale_data = json_decode($json_data, true);
-            if (isset($locale_data['translation']['nationalities'])) {
-                $nationalities = $locale_data['translation']['nationalities'];
-            }
-        }
+        $nationalities = $this->get_sorted_nationalities();
+
         // Pass messages and user data from PHP to JavaScript
         $data_to_pass = array(
             'messages' => array(
@@ -174,15 +168,7 @@ class Woocerti_Public {
             $errors['single_student_email'] = __('Please enter a valid email address.', 'woocertificatespackage');
         }
         if ($document_type === 'identification_document') {
-            $locales_path = WOOCERTI_PLUGIN_DIR.'public/assets/js/locales/es.json';
-            $nationalities = array();
-            if (file_exists($locales_path)) {
-                $json_data = file_get_contents($locales_path);
-                $locale_data = json_decode($json_data, true);
-                if (isset($locale_data['translation']['nationalities'])) {
-                    $nationalities = $locale_data['translation']['nationalities'];
-                }
-            }
+            $nationalities = $this->get_sorted_nationalities();
 
             if (empty($inssued_in) || !array_key_exists(strtoupper($inssued_in), $nationalities)) {
                 $errors['single_student_inssued_in'] = __('This field is required.', 'woocertificatespackage');
@@ -194,11 +180,6 @@ class Woocerti_Public {
         // If there are errors, return them
         if (!empty($errors)) {
             wp_send_json_error(array('validations' => $errors));
-        }
-
-        // Check if the certificate can be issued
-        if (!$this->woocerti_issue_certificate($course_id)) {
-            wp_send_json_error(array('messages' => array(__('There are no certificates available for this course.', 'woocertificatespackage'))));
         }
 
         // If validation passes, proceed with saving the data
@@ -249,7 +230,9 @@ class Woocerti_Public {
                 $participant_id
             ));
 
-            if (!$relation_exists) {
+            if ($relation_exists) {
+                wp_send_json_error(array('messages' => array(__('This participant is already registered for this course.', 'woocertificatespackage'))));
+            } else {
                 $wpdb->insert(
                     $course_participants_table,
                     array(
@@ -261,9 +244,13 @@ class Woocerti_Public {
                 );
             }
         }
-        // Return a success response
-        wp_send_json_success(array('message' => __('Certificate issued successfully!', 'woocertificatespackage')));
 
+        // Issue the certificate if there are still certificates available for this course
+        if ($this->woocerti_issue_certificate($course_id)) {
+            wp_send_json_success(array('message' => __('Certificate issued successfully!', 'woocertificatespackage')));
+        } else {
+            wp_send_json_error(array('messages' => array(__('There are no certificates available for this course.', 'woocertificatespackage'))));
+        }
         wp_die();
     }
 
@@ -951,61 +938,246 @@ class Woocerti_Public {
 
         $course_name = $course_record->course_name;
 
+        $nationalities = $this->get_sorted_nationalities();
+
         wc_get_template(
             'issue-certificate-form.php',
-            array('course_id' => $course_id, 'course_name' => $course_name)
+            array('course_id' => $course_id, 'course_name' => $course_name, 'nationalities' => $nationalities)
         );
     }
 
     /**
-     * Handles the processing of forms for issuing certificates, either individually or via Excel.
+     * Handles the issuance of certificates from a bulk file upload.
      */
+
+    // AQUI
     public function handle_certificate_issuance() {
-        // First, validate the nonce for security
-        if (!isset($_POST['woocerti_issue_certificate_nonce']) || !wp_verify_nonce($_POST['woocerti_issue_certificate_nonce'], 'woocerti_issue_certificate_action')) {
-            wp_safe_redirect(wc_get_account_endpoint_url('issue-certificate'));
-            exit;
-        }
-
-        $user_id = get_current_user_id();
+        global $wpdb;
+        $participants_table = $wpdb->prefix.'participants';
+        $course_participants_table = $wpdb->prefix.'course_participants';
         $course_id = isset($_POST['course_id']) ? intval($_POST['course_id']) : 0;
-        $issued_students = [];
+        $file_data = $_FILES['student_list'];
 
-        if (isset($_FILES['student_list']) && $_FILES['student_list']['error'] === UPLOAD_ERR_OK) {
-            $file = fopen($_FILES['student_list']['tmp_name'], 'r');
-            while (($data = fgetcsv($file, 1000, ",")) !== FALSE) {
-                // Assuming the CSV format is: first_name, last_name, email, document_number
-                $student_first_name = sanitize_text_field($data[0]);
-                $student_last_name = sanitize_text_field($data[1]);
-                $student_email = sanitize_email($data[2]);
-                $student_document_number = sanitize_text_field($data[3]);
+        $column_map = [
+            'document_type' => 'document_type',
+            'document_number' => 'document_number',
+            'inssued_in' => 'inssued_in',
+            'first_name' => 'first_name',
+            'last_name' => 'last_name',
+            'email' => 'email',
+            'phone_number' => 'phone_number',
+        ];
 
-                if ($this->woocerti_issue_certificate($course_id)) {
-                    $issued_students[] = array(
-                        'first_name' => $student_first_name,
-                        'last_name' => $student_last_name,
-                        'email' => $student_email,
-                        'document_number' => $student_document_number,
-                        'status' => 'issued'
-                    );
-                } else {
-                    $issued_students[] = array(
-                        'first_name' => $student_first_name,
-                        'last_name' => $student_last_name,
-                        'email' => $student_email,
-                        'document_number' => $student_document_number,
-                        'status' => 'failed'
-                    );
+        $required_columns = [
+            'document_type',
+            'document_number',
+            'inssued_in',
+            'first_name',
+            'last_name',
+            'email',
+        ];
+
+        $results = [
+            'success' => true,
+            'issued_count' => 0,
+            'failed_count' => 0,
+            'detailed_results' => [],
+            'general_messages' => [],
+        ];
+
+        $nationalities = $this->get_sorted_nationalities();
+
+        try {
+            $file_type = \PhpOffice\PhpSpreadsheet\IOFactory::identify($file_data['tmp_name']);
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader($file_type);
+            $reader->setReadDataOnly(true);
+            $spreadsheet = $reader->load($file_data['tmp_name']);
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray(null, true, true, true);
+
+            $header = array_shift($rows);
+            $header_map = array_map('trim', $header);
+            $header_map_flipped = array_flip($header_map);
+
+            foreach ($required_columns as $col) {
+                if (!isset($header_map_flipped[$col])) {
+                    throw new Exception(sprintf(__('The column "%s" is missing from the file.', 'woocertificatespackage'), $col));
                 }
             }
-            fclose($file);
-        }
 
-        set_transient('woocerti_issued_students_'.$user_id, $issued_students, 60 * 5);
-        $redirect_url = wc_get_account_endpoint_url('issue-certificate');
-        $redirect_url = add_query_arg(array('action' => 'list_issued', 'course_id' => $course_id), $redirect_url);
-        wp_safe_redirect($redirect_url);
-        exit;
+            $row_number = 1;
+            foreach ($rows as $row) {
+                $row_number++;
+                $errors = [];
+                $participant_data = [];
+
+                foreach ($column_map as $header_name => $db_field) {
+                    $column_index = $header_map_flipped[$header_name] ?? null;
+                    if ($column_index !== null) {
+                        $value = trim($row[$column_index]);
+                        if ($db_field === 'email') {
+                            $participant_data[$db_field] = sanitize_email($value);
+                        } elseif ($db_field === 'phone_number') {
+                            $participant_data[$db_field] = sanitize_text_field($value);
+                        } else {
+                            $participant_data[$db_field] = sanitize_text_field($value);
+                        }
+                    }
+                }
+
+                foreach ($required_columns as $col) {
+                    if (empty($participant_data[$column_map[$col]])) {
+                        $errors[] = sprintf(__('The "%s" field is required.', 'woocertificatespackage'), $col);
+                    }
+                }
+
+                if (!is_email($participant_data['email'])) {
+                    $errors[] = __('Invalid email format.', 'woocertificatespackage');
+                }
+
+                $document_type = $participant_data['document_type'];
+                $inssued_in = $participant_data['inssued_in'];
+                $allowed_types = ['passport', 'identification_document', 'ssn'];
+
+                if (!in_array($document_type, $allowed_types)) {
+                    $errors[] = __('Please select a valid document type.', 'woocertificatespackage');
+                }
+
+                if ($document_type === 'identification_document') {
+                    if (empty($inssued_in) || !array_key_exists(strtoupper($inssued_in), $nationalities)) {
+                        $errors[] = __('The "Issued In" field is required for the "Identification Document" type.', 'woocertificatespackage');
+                    }
+                } else {
+                    $participant_data['inssued_in'] = 'US';
+                }
+
+                if (!empty($errors)) {
+                    $results['failed_count']++;
+                    $results['detailed_results'][] = [
+                        'row_number' => $row_number,
+                        'status' => 'failed',
+                        'data' => $participant_data,
+                        'errors' => $errors,
+                    ];
+                    continue;
+                }
+
+                $existing_participant_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id_participant FROM `$participants_table` WHERE document_type = %s AND document_number = %s AND inssued_in = %s",
+                    $participant_data['document_type'],
+                    $participant_data['document_number'],
+                    $participant_data['inssued_in']
+                ));
+
+                $participant_id = 0;
+                if ($existing_participant_id) {
+                    $participant_id = $existing_participant_id;
+                    $wpdb->update(
+                        $participants_table,
+                        array_merge($participant_data, ['date_updated' => current_time('mysql')]),
+                        array('id_participant' => $participant_id)
+                    );
+                } else {
+                    $wpdb->insert(
+                        $participants_table,
+                        array_merge($participant_data, ['date_created' => current_time('mysql'), 'date_updated' => current_time('mysql')])
+                    );
+                    $participant_id = $wpdb->insert_id;
+                }
+
+                if ($participant_id) {
+                    $relation_exists = $wpdb->get_var($wpdb->prepare(
+                        "SELECT id_course_participant FROM `$course_participants_table` WHERE id_course = %d AND id_participant = %d",
+                        $course_id,
+                        $participant_id
+                    ));
+
+                    if ($relation_exists) {
+                        $results['failed_count']++;
+                        $results['detailed_results'][] = [
+                            'row_number' => $row_number,
+                            'status' => 'failed',
+                            'data' => $participant_data,
+                            'errors' => [__('This participant is already registered for this course.', 'woocertificatespackage')],
+                        ];
+                        continue;
+                    }
+
+                    $wpdb->insert(
+                        $course_participants_table,
+                        [
+                            'id_course' => $course_id,
+                            'id_participant' => $participant_id,
+                            'date_created' => current_time('mysql'),
+                            'date_updated' => current_time('mysql')
+                        ]
+                    );
+
+                    if ($this->woocerti_issue_certificate($course_id)) {
+                        $results['issued_count']++;
+                        $results['detailed_results'][] = [
+                            'row_number' => $row_number,
+                            'status' => 'issued',
+                            'data' => $participant_data,
+                            'message' => __('Certificate issued successfully!', 'woocertificatespackage'),
+                        ];
+                    } else {
+                        $results['failed_count']++;
+                        $results['detailed_results'][] = [
+                            'row_number' => $row_number,
+                            'status' => 'failed',
+                            'data' => $participant_data,
+                            'errors' => [__('There are no certificates available for this course.', 'woocertificatespackage')],
+                        ];
+                    }
+                } else {
+                    $results['failed_count']++;
+                    $results['detailed_results'][] = [
+                        'row_number' => $row_number,
+                        'status' => 'failed',
+                        'data' => $participant_data,
+                        'errors' => [__('Error saving participant data.', 'woocertificatespackage')],
+                    ];
+                }
+            }
+
+            if ($results['issued_count'] === 0) {
+                $results['success'] = false;
+                $results['general_messages'][] = __('No certificates were issued due to errors in all rows or no certificates being available for the course.', 'woocertificatespackage');
+
+                // Si no se emitió ninguno, se guarda el resultado detallado en una variable transitoria.
+                set_transient('woocerti_bulk_results', $results, HOUR_IN_SECONDS);
+
+                // Redirige de vuelta a la página con el modo 'bulk'
+                $redirect_url = add_query_arg(['mode' => 'bulk', 'course_id' => $course_id], wc_get_account_endpoint_url('issue-certificate'));
+                wp_safe_redirect($redirect_url);
+                exit;
+            }
+
+            $results['general_messages'][] = sprintf(__('Batch processing complete. %1$d certificates were issued. %2$d students had errors.', 'woocertificatespackage'), $results['issued_count'], $results['failed_count']);
+
+            // Si se emitió al menos uno, se guarda el resultado detallado para mostrarlo en la página.
+            set_transient('woocerti_bulk_results', $results, HOUR_IN_SECONDS);
+
+            $redirect_url = add_query_arg(['mode' => 'bulk', 'course_id' => $course_id], wc_get_account_endpoint_url('issue-certificate'));
+            wp_safe_redirect($redirect_url);
+            exit;
+
+        } catch (\PhpOffice\PhpSpreadsheet\Exception $e) {
+            // echo "Error 1: ";
+            // var_dump($e);
+            // die();
+            $results['success'] = false;
+            $errors = array(__('Error parsing the file.', 'woocertificatespackage'), sprintf(__('Error: %s', 'woocertificatespackage'), $e->getMessage()));
+            set_transient('woocerti_form_errors', $errors, HOUR_IN_SECONDS);
+        } catch (Exception $e) {
+            // echo "Error 2: ";
+            // var_dump($e);
+            // die();
+            $results['success'] = false;
+            $errors = array(__('General error.', 'woocertificatespackage'), sprintf(__('Error: %s', 'woocertificatespackage'), $e->getMessage()));
+            set_transient('woocerti_form_errors', $errors, HOUR_IN_SECONDS);
+        }
     }
 
     /**
@@ -1043,6 +1215,34 @@ class Woocerti_Public {
         }
 
         return false;
+    }
+
+    /**
+     * Retrieves and sorts the nationalities from the appropriate locale JSON file.
+     *
+     * @return array An associative array of two-letter country codes => country names.
+     */
+    private function get_sorted_nationalities() {
+        $current_locale = get_locale();
+        $lang_code = substr($current_locale, 0, 2);
+        $locales_path = WOOCERTI_PLUGIN_DIR."public/assets/js/locales/{$lang_code}.json";
+
+        // Fallback to 'en' if the current locale file doesn't exist.
+        if (!file_exists($locales_path)) {
+            $locales_path = WOOCERTI_PLUGIN_DIR.'public/assets/js/locales/en.json';
+        }
+
+        $nationalities = [];
+        if (file_exists($locales_path)) {
+            $json_data = file_get_contents($locales_path);
+            $locale_data = json_decode($json_data, true);
+            if (isset($locale_data['translation']['nationalities'])) {
+                $nationalities = $locale_data['translation']['nationalities'];
+                asort($nationalities);
+            }
+        }
+
+        return $nationalities;
     }
 
     // // Example usage for 'woocerti_issue_certificate'

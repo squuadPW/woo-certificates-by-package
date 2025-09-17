@@ -71,9 +71,22 @@
     <?php endif; ?>
 
     <?php if (isset($_GET['mode']) && $_GET['mode'] === 'bulk') : ?>
+        <?php
+            // Check for general form errors stored in a transient
+            $errors = get_transient('woocerti_form_errors');
+            if ($errors && is_array($errors)) {
+                echo '<ul class="woocerti-error-messages">';
+                foreach ($errors as $error) {
+                    echo '<li class="error-message">'.esc_html($error).'</li>';
+                }
+                echo '</ul>';
+                delete_transient('woocerti_form_errors');
+            }
+        ?>
         <div class="woocerti-bulk-upload">
             <h3><?php echo __('Bulk Upload via Excel or CSV', 'woocertificatespackage'); ?></h3>
-            <form method="post" action="" enctype="multipart/form-data">
+            <form method="post" action="" enctype="multipart/form-data" id="woocerti-bulk-upload-form">
+                <div id="woocerti-response-message" style="display: none;"></div>
                 <p class="form-row form-row-wide">
                     <label for="student_list"><?php echo __('Select a file', 'woocertificatespackage'); ?> <span class="required">*</span></label>
                     <div id="file-drop-area">
@@ -85,9 +98,52 @@
                     <span class="validation-message"></span>
                 </p>
                 <p class="description">
-                    <?php echo __('The file should have a header row and columns: "first_name", "last_name", "email", and "document_number".', 'woocertificatespackage'); ?>
+                    <?php echo __('The file must have a header row with the following columns:', 'woocertificatespackage'); ?>
                     <br>
-                    <?php echo __('All fields are required.', 'woocertificatespackage'); ?>
+                    <strong><?php echo __('Required:', 'woocertificatespackage'); ?></strong> "document_type", "document_number", "inssued_in", "first_name", "last_name", "email".
+                    <br>
+                    <strong><?php echo __('Optional:', 'woocertificatespackage'); ?></strong> "phone_number".
+                    <br>
+                    <strong><?php echo __('Columns:', 'woocertificatespackage'); ?></strong>
+                    <ul>
+                        <li>
+                            <strong>document_type</strong>: <?= __('Type of student identification document.', 'woocertificatespackage'); ?>
+                            <br>
+                            <?= __('Allowed values:', 'woocertificatespackage'); ?>
+                            <ul>
+                                <li><strong>passport</strong>: <?= __('Use this value for passport-type ID documents. This only applies to United States passports.', 'woocertificatespackage'); ?></li>
+                                <li><strong>ssn</strong>: <?= __('Use this value for your United States Social Security Number.', 'woocertificatespackage'); ?></li>
+                                <li><strong>identification_document</strong>: <?= __("Use this value for any other type of identification document (such as an ID card, DNI, driver's license, etc.).", 'woocertificatespackage'); ?></li>
+                            </ul>
+                        </li>
+                        <li><strong>document_number</strong>: <?= __('Student identification number.', 'woocertificatespackage'); ?></li>
+                        <li>
+                            <strong>inssued_in</strong>: <?= __('Country where the document was issued.', 'woocertificatespackage'); ?>
+                            <ul>
+                                <li><?= __('For documents of type "identification_document", enter the two-letter country code (ISO 3166-1 alpha-2) where the document was issued. For example, "US" for the United States or "MX" for Mexico.', 'woocertificatespackage'); ?></li>
+                                <li><?= __('This field is optional if the Document Type is "passport" or "ssn", as the system will automatically fill it in with the value "US".', 'woocertificatespackage'); ?></li>
+                                <li>
+                                    <details class="woocerti-collapsible-info">
+                                        <summary>
+                                            <?php echo __('Click to see the valid values for "inssued_in"', 'woocertificatespackage'); ?>
+                                        </summary>
+                                        <div class="woocerti-collapsible-content">
+                                            <!-- <p><?php echo __('For the "inssued_in" column, use the two-letter country code (ISO 3166-1 alpha-2) as shown below:', 'woocertificatespackage'); ?></p> -->
+                                            <ul style="list-style-type: none; padding: 0; margin: 0; columns: 4; column-gap: 20px;">
+                                                <?php foreach ($nationalities as $code => $country): ?>
+                                                    <li><?php echo esc_html($country); ?>: <strong><?php echo esc_html($code); ?></strong></li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                        </div>
+                                    </details>
+                                </li>
+                            </ul>
+                        </li>
+                        <li><strong>first_name</strong>: <?= __('Student names.', 'woocertificatespackage'); ?></li>
+                        <li><strong>last_name</strong>: <?= __("Student's last name.", 'woocertificatespackage'); ?></li>
+                        <li><strong>email</strong>: <?= __('Student email address.', 'woocertificatespackage'); ?></li>
+                        <li><strong>phone_number</strong>: <?= __("Student contact phone number. This field is optional, but it's recommended to include the country code to ensure proper validation. For example, +1 for the United States or +52 for Mexico.", 'woocertificatespackage'); ?></li>
+                    </ul>
                 </p>
                 <p class="form-row">
                     <input type="hidden" name="course_id" value="<?php echo esc_attr($course_id); ?>" />
@@ -95,6 +151,18 @@
                     <button type="submit" class="woocommerce-button button woocerti-issue-submit"><?php echo __('Upload and Issue', 'woocertificatespackage'); ?></button>
                 </p>
             </form>
+            <?php
+                // Get the bulk results from the transient
+                $results = get_transient('woocerti_bulk_results');
+                if ($results) {
+                    // Convert the PHP array to a JSON string to pass to JavaScript
+                    $results_json = json_encode($results);
+                    echo '<div id="woocerti-bulk-results" data-results=\''.esc_attr($results_json).'\'>';
+                    echo '</div>';
+                    // Delete the transient so the message doesn't persist on refresh
+                    delete_transient('woocerti_bulk_results');
+                }
+            ?>
         </div>
     <?php endif; ?>
 
