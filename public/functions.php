@@ -104,6 +104,7 @@ class Woocerti_Public {
                 'document_type_required' => __('Please select a document type.', 'woocertificatespackage'),
                 'phone_number_invalid' => __('Invalid phone number.', 'woocertificatespackage'),
                 'ajax_error' => __('There was an error processing your request. Please try again.', 'woocertificatespackage'),
+                'bulk_results_error' => __('An error occurred while processing the bulk upload results. Please try again.', 'woocertificatespackage'),
             ),
             'iti_phone' => array(
                 'search_placeholder' => __('Search', 'woocertificatespackage'),
@@ -111,6 +112,16 @@ class Woocerti_Public {
                 'country_list_aria_label' => __('List of countries', 'woocertificatespackage'),
                 'clear_search_aria_label' => __('Clear search', 'woocertificatespackage'),
                 'zero_search_results' => __('No results found', 'woocertificatespackage'),
+            ),
+            'text_results' => array(
+                'document_number' => __('Document Number', 'woocertificatespackage'),
+                'first_name' => __('First Name', 'woocertificatespackage'),
+                'last_name' => __('Last Name', 'woocertificatespackage'),
+                'email' => __('Email', 'woocertificatespackage'),
+                'status' => __('Status', 'woocertificatespackage'),
+                'issued' => __('Issued', 'woocertificatespackage'),
+                'failed' => __('Failed', 'woocertificatespackage'),
+                'error_details' => __('Error details:', 'woocertificatespackage'),
             ),
             'user_name' => $user_name,
             'woocerti_plugin_url' => WOOCERTI_PLUGIN_URL,
@@ -949,8 +960,6 @@ class Woocerti_Public {
     /**
      * Handles the issuance of certificates from a bulk file upload.
      */
-
-    // AQUI
     public function handle_certificate_issuance() {
         global $wpdb;
         $participants_table = $wpdb->prefix.'participants';
@@ -1145,10 +1154,10 @@ class Woocerti_Public {
                 $results['success'] = false;
                 $results['general_messages'][] = __('No certificates were issued due to errors in all rows or no certificates being available for the course.', 'woocertificatespackage');
 
-                // Si no se emitió ninguno, se guarda el resultado detallado en una variable transitoria.
+                // If none were issued, the detailed result is saved in a transient variable.
                 set_transient('woocerti_bulk_results', $results, HOUR_IN_SECONDS);
 
-                // Redirige de vuelta a la página con el modo 'bulk'
+                // Redirects back to the page with 'bulk' mode
                 $redirect_url = add_query_arg(['mode' => 'bulk', 'course_id' => $course_id], wc_get_account_endpoint_url('issue-certificate'));
                 wp_safe_redirect($redirect_url);
                 exit;
@@ -1156,7 +1165,7 @@ class Woocerti_Public {
 
             $results['general_messages'][] = sprintf(__('Batch processing complete. %1$d certificates were issued. %2$d students had errors.', 'woocertificatespackage'), $results['issued_count'], $results['failed_count']);
 
-            // Si se emitió al menos uno, se guarda el resultado detallado para mostrarlo en la página.
+            // If at least one was issued, the detailed result is saved for display on the page.
             set_transient('woocerti_bulk_results', $results, HOUR_IN_SECONDS);
 
             $redirect_url = add_query_arg(['mode' => 'bulk', 'course_id' => $course_id], wc_get_account_endpoint_url('issue-certificate'));
@@ -1164,16 +1173,10 @@ class Woocerti_Public {
             exit;
 
         } catch (\PhpOffice\PhpSpreadsheet\Exception $e) {
-            // echo "Error 1: ";
-            // var_dump($e);
-            // die();
             $results['success'] = false;
             $errors = array(__('Error parsing the file.', 'woocertificatespackage'), sprintf(__('Error: %s', 'woocertificatespackage'), $e->getMessage()));
             set_transient('woocerti_form_errors', $errors, HOUR_IN_SECONDS);
         } catch (Exception $e) {
-            // echo "Error 2: ";
-            // var_dump($e);
-            // die();
             $results['success'] = false;
             $errors = array(__('General error.', 'woocertificatespackage'), sprintf(__('Error: %s', 'woocertificatespackage'), $e->getMessage()));
             set_transient('woocerti_form_errors', $errors, HOUR_IN_SECONDS);

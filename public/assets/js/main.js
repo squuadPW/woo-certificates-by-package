@@ -235,7 +235,6 @@ jQuery(document).ready(function($) {
         // Initialize intl-tel-input for the phone number field
         if (phoneInput && typeof woocerti_data.iti_phone !== 'undefined') {
             iti = window.intlTelInput(phoneInput, {
-                // nationalMode: true,
                 initialCountry: "auto",
                 separateDialCode: true,
                 strictMode: true,
@@ -555,51 +554,85 @@ jQuery(document).ready(function($) {
         }
     }
 
-    //----------------------------------------------------//
-    // Logic to display bulk load results
-    //----------------------------------------------------//
+    // Check for bulk upload results
     const bulkResultsContainer = $('#woocerti-bulk-results');
     if (bulkResultsContainer.length) {
-        const results = JSON.parse(bulkResultsContainer.attr('data-results'));
-
-        console.log("RESULTS: ", results);
-
-        if (results && results.issued_count > 0) {
-            showMessage([results.general_messages[0]], 'success');
-        } else if (results && results.failed_count > 0) {
-            showMessage([results.general_messages[0]], 'error');
-        }
-
-        // Build the detailed results table
-        const detailedResultsTable = bulkResultsContainer.find('table tbody');
-        results.detailed_results.forEach(student => {
-            const row = $('<tr></tr>');
-            row.append(`<td>${student.row_number}</td>`);
-            row.append(`<td>${student.data.first_name} ${student.data.last_name}</td>`);
-
-            const statusCell = $('<td></td>');
-            if (student.status === 'issued') {
-                statusCell.append('<span class="status-issued">Issued</span>');
-            } else {
-                statusCell.append('<span class="status-failed">Failed</span>');
+        try {
+            const results = JSON.parse(bulkResultsContainer.attr('data-results'));
+            if (results.general_messages && results.general_messages.length > 0) {
+                const messageType = results.success ? 'success' : 'error';
+                showMessage(results.general_messages, messageType);
             }
-            row.append(statusCell);
 
-            const messageCell = $('<td></td>');
-            if (student.status === 'issued') {
-                messageCell.text(student.message);
-            } else {
-                const errorsList = $('<ul></ul>').addClass('error-list');
-                student.errors.forEach(err => {
-                    errorsList.append(`<li>${err}</li>`);
+            if (results.detailed_results && results.detailed_results.length > 0) {
+                // Check if the HTML for the results table exists
+                let resultsTableContainer = $('#woocerti-issued-certificates-table');
+                if (resultsTableContainer.length === 0) {
+                    // If the table doesn't exist, create it dynamically
+                    const tableHtml = `
+                        <table id="woocerti-issued-certificates-table" class="woocommerce-MyAccount-issued-certificates-table shop_table_responsive my_account_orders">
+                            <thead>
+                                <tr>
+                                    <th class="woocommerce-MyAccount-issued-certificates-table__header--document-number"><span>${woocerti_data.text_results.document_number}</span></th>
+                                    <th class="woocommerce-MyAccount-issued-certificates-table__header--name"><span>${woocerti_data.text_results.first_name}</span></th>
+                                    <th class="woocommerce-MyAccount-issued-certificates-table__header--last-name"><span>${woocerti_data.text_results.last_name}</span></th>
+                                    <th class="woocommerce-MyAccount-issued-certificates-table__header--email"><span>${woocerti_data.text_results.email}</span></th>
+                                    <th class="woocommerce-MyAccount-issued-certificates-table__header--status"><span>${woocerti_data.text_results.status}</span></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    `;
+                    bulkResultsContainer.append(tableHtml);
+                    resultsTableContainer = $('#woocerti-issued-certificates-table');
+                }
+
+                const tableBody = resultsTableContainer.find('tbody');
+                tableBody.empty(); // Clear previous results
+
+                // Populate the table with the detailed results
+                results.detailed_results.forEach(result => {
+                    const isFailed = result.status === 'failed';
+                    const statusClass = result.status === 'issued' ? 'status-issued' : 'status-failed';
+                    const statusText = result.status === 'issued' ? woocerti_data.text_results.issued : woocerti_data.text_results.failed;
+                    const row = `
+                        <tr>
+                            <td>${result.data.document_number}</td>
+                            <td>${result.data.first_name}</td>
+                            <td>${result.data.last_name}</td>
+                            <td>${result.data.email}</td>
+                            <td>
+                                <span class="${statusClass}">
+                                    ${statusText}
+                                    ${isFailed ? '<i class="fa fa-info-circle woocerti-toggle-details"></i>' : ''}
+                                </span>
+                            </td>
+                        </tr>
+                        ${isFailed ? `
+                        <tr class="woocerti-error-details" style="display: none;">
+                            <td colspan="5">
+                                <div class="error-detail-content">
+                                    <strong${woocerti_data.text_results.error_details}</strong>
+                                    <ul>
+                                        ${result.errors.map(error => `<li>${error}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        ` : ''}
+                    `;
+                    tableBody.append(row);
                 });
-                messageCell.append(errorsList);
+                // Add the listener for the click
+                tableBody.on('click', '.woocerti-toggle-details', function() {
+                    // Select the parent of the row and then the next row
+                    const errorRow = $(this).closest('tr').next('.woocerti-error-details');
+                    errorRow.toggle();
+                });
             }
-            row.append(messageCell);
-
-            detailedResultsTable.append(row);
-        });
+        } catch (error) {
+            showMessage([woocerti_data.messages.bulk_results_error], 'error');
+        }
     }
-
 
 });

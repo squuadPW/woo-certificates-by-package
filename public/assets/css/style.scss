@@ -1,9 +1,11 @@
 .woocommerce-MyAccount-navigation ul li.woocommerce-MyAccount-navigation-link--certificates a:before{
-	content: "\f559"
+	content: "\f559";
+    margin-right: 8px;
 }
 
 .woocommerce-MyAccount-navigation ul li.woocommerce-MyAccount-navigation-link--courses a:before{
-	content: "\f19d"
+	content: "\f19d";
+    margin-right: 8px;
 }
 
 /*
@@ -139,6 +141,12 @@
     color: #e74c3c;
 }
 
+.success-message {
+    font-weight: bold;
+    margin-top: .5rem;
+    margin-bottom: .5rem;
+}
+
 /* Styles for client-side validation */
 .woocommerce-MyAccount-content form {
     .validation-message {
@@ -251,4 +259,21 @@
     margin-top: 1em;
     font-weight: bold;
     color: #3498db;
+}
+.woocerti-toggle-details {
+    cursor: pointer;
+    margin-left: 5px;
+    color: #e2401c;
+}
+
+.woocerti-error-details {
+    td {
+        background-color: #fcebeb;
+        border-top: none;
+    }
+}
+
+.error-detail-content {
+    padding: 10px 15px;
+    border-left: 3px solid #e2401c;
 }
