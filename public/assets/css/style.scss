@@ -1,3 +1,6 @@
+$border-color: #e0e0e0;
+$color-red: #e2401c;
+
 .woocommerce-MyAccount-navigation ul li.woocommerce-MyAccount-navigation-link--certificates a:before{
 	content: "\f559";
     margin-right: 8px;
@@ -16,6 +19,14 @@
  */
 
 .woocommerce-MyAccount-content {
+    .woocerti-courses-header {
+        .p-button-create {
+            a {
+                margin: 0;
+                width: initial;
+            }
+        }
+    }
     form {
         /* General form style */
         display: flex;
@@ -34,12 +45,12 @@
                     margin-right: 0;
                 }
 
-                select {
-                    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>');
-                    background-repeat: no-repeat;
-                    background-position: right 10px center;
-                    outline: none;
-                }
+                // select {
+                //     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>');
+                //     background-repeat: no-repeat;
+                //     background-position: right 10px center;
+                //     outline: none;
+                // }
 
                 .iti {
                     width: 100%;
@@ -55,15 +66,29 @@
             .button {
                 margin-right: 1em;
             }
+
+            .btn-course {
+                margin: 0;
+                margin-top: 1rem;
+                width: initial;
+                padding: 5px 20px !important;
+                text-align: center;
+                border-radius: 20px;
+                &:last-child {
+                    margin-left: 1em;
+                }
+            }
         }
 
         /* Width rules for fields */
         > p {
             flex-basis: 100%; /* 100% width for single-column fields */
-
             .form-required-fields-note {
                 font-style: italic;
             }
+        }
+        > .p-legends {
+            margin: 1.5rem 0 .5rem 0;
         }
         .form-row {
             .row-check {
@@ -138,7 +163,7 @@
 }
 
 .error-message {
-    color: #e74c3c;
+    color: $color-red;
 }
 
 .success-message {
@@ -153,7 +178,7 @@
         display: block;
         margin-top: 0.5em;
         font-size: 0.9em;
-        color: #e74c3c;
+        color: $color-red;
         font-weight: 500;
         visibility: hidden;
     }
@@ -167,8 +192,8 @@
 /* Style for input when it has an error */
 .woocommerce-MyAccount-content form {
     .input-error {
-        border-color: #e74c3c !important;
-        box-shadow: inset 0 1px 1px #e74c3c !important;
+        border-color: $color-red !important;
+        box-shadow: inset 0 1px 1px $color-red !important;
     }
 
     .validation-message {
@@ -263,10 +288,11 @@
 .woocerti-toggle-details {
     cursor: pointer;
     margin-left: 5px;
-    color: #e2401c;
+    color: $color-red;
 }
 
 .woocerti-error-details {
+    border: 1px solid $border-color;
     td {
         background-color: #fcebeb;
         border-top: none;
@@ -275,5 +301,5 @@
 
 .error-detail-content {
     padding: 10px 15px;
-    border-left: 3px solid #e2401c;
+    border-left: 3px solid $color-red;
 }

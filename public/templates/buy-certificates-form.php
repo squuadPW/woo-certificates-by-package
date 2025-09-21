@@ -21,8 +21,8 @@
     </div>
 
     <p class="p-buttons">
-        <button type="submit" class="button woocommerce-button"><?php echo __('Add to Cart', 'woocertificatespackage'); ?></button>
-        <a href="<?php echo esc_url(wc_get_account_endpoint_url('courses')); ?>" class="button woocerti-back-button"><?php echo __('Back to Courses', 'woocertificatespackage'); ?></a>
+        <button type="submit" class="woocommerce-button button button-primary btn-course"><?php echo __('Add to Cart', 'woocertificatespackage'); ?></button>
+        <a href="<?php echo esc_url(wc_get_account_endpoint_url('courses')); ?>" class="woocommerce-button button btn-course woocerti-back-button"><?php echo __('Back to Courses', 'woocertificatespackage'); ?></a>
     </p>
 </form>
 

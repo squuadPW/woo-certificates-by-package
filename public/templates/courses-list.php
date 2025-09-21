@@ -1,6 +1,8 @@
 <div class="woocerti-courses-header">
     <h2><?php echo __('My Courses', 'woocertificatespackage'); ?></h2>
-    <a href="<?php echo esc_url($endpoint_url.'?action=create'); ?>" class="woocommerce-button button button-primary"><?php echo __('Create Course', 'woocertificatespackage'); ?></a>
+    <p class="p-button-create">
+        <a href="<?php echo esc_url($endpoint_url.'?action=create'); ?>" class="woocommerce-button button button-primary"><?php echo __('Create Course', 'woocertificatespackage'); ?></a>
+    </p>
 </div>
 <?php if (empty($courses) && $current_page == 1) : ?>
     <p><?php echo __('You have not created any courses yet.', 'woocertificatespackage'); ?></p>

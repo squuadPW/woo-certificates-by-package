@@ -36,7 +36,7 @@
         </p>
         <p class="form-row-field">
             <label for="course_date"><?php echo __('Date', 'woocertificatespackage'); ?></label>
-            <input type="date" id="course_date" class="input-text input-field" name="course_date" value="<?php echo esc_attr($course_date); ?>" min="<?php echo date('Y-m-d'); ?>">
+            <input type="date" id="course_date" class="" name="course_date" value="<?php echo esc_attr($course_date); ?>" min="<?php echo date('Y-m-d'); ?>">
             <span class="validation-message"></span>
         </p>
     </div>
@@ -56,7 +56,7 @@
         </p>
         <p class="form-row-field">
             <label for="certification_fee_type"><?php echo __('Certification Fee Type', 'woocertificatespackage'); ?> <span class="required" aria-hidden="true">*</span></label>
-            <select id="certification_fee_type" name="certification_fee_type" class="input-text input-field">
+            <select id="certification_fee_type" name="certification_fee_type" class="">
                 <option value="Fixed" <?php selected($certification_fee_type, 'Fixed'); ?>><?php echo __('Fixed', 'woocertificatespackage'); ?></option>
                 <option value="Percentage" <?php selected($certification_fee_type, 'Percentage'); ?>><?php echo __('Percentage', 'woocertificatespackage'); ?></option>
             </select>
@@ -68,13 +68,13 @@
             <span class="validation-message"></span>
         </p>
     </div>
-    <p>
+    <p class="p-legends">
         <span class="form-required-fields-note">
             <?php echo __('Fields marked with * are required', 'woocertificatespackage'); ?>
         </span>
     </p>
     <p class="p-buttons">
-        <input type="submit" class="woocommerce-button button" name="save_course" value="<?php echo esc_attr(__('Save Course', 'woocertificatespackage')); ?>">
-        <input type="submit" class="woocommerce-button button" name="save_draft" value="<?php echo esc_attr($submit_label); ?>">
+        <input type="submit" class="woocommerce-button button button-primary btn-course" name="save_course" value="<?php echo esc_attr(__('Save Course', 'woocertificatespackage')); ?>">
+        <input type="submit" class="woocommerce-button button btn-course" name="save_draft" value="<?php echo esc_attr($submit_label); ?>">
     </p>
 </form>

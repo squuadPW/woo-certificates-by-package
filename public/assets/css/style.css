@@ -15,6 +15,10 @@
  * Based on the appearance of the WooCommerce form.
  * ====================================================================
  */
+.woocommerce-MyAccount-content .woocerti-courses-header .p-button-create a {
+  margin: 0;
+  width: initial;
+}
 .woocommerce-MyAccount-content form {
   /* General form style */
   display: flex;
@@ -34,12 +38,6 @@
 .woocommerce-MyAccount-content form .form-row .form-row-field:last-child {
   margin-right: 0;
 }
-.woocommerce-MyAccount-content form .form-row .form-row-field select {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>');
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  outline: none;
-}
 .woocommerce-MyAccount-content form .form-row .form-row-field .iti {
   width: 100%;
 }
@@ -49,11 +47,25 @@
 .woocommerce-MyAccount-content form .p-buttons .button {
   margin-right: 1em;
 }
+.woocommerce-MyAccount-content form .p-buttons .btn-course {
+  margin: 0;
+  margin-top: 1rem;
+  width: initial;
+  padding: 5px 20px !important;
+  text-align: center;
+  border-radius: 20px;
+}
+.woocommerce-MyAccount-content form .p-buttons .btn-course:last-child {
+  margin-left: 1em;
+}
 .woocommerce-MyAccount-content form > p {
   flex-basis: 100%; /* 100% width for single-column fields */
 }
 .woocommerce-MyAccount-content form > p .form-required-fields-note {
   font-style: italic;
+}
+.woocommerce-MyAccount-content form > .p-legends {
+  margin: 1.5rem 0 0.5rem 0;
 }
 .woocommerce-MyAccount-content form .form-row {
   /* Style for rows with three fields */
@@ -107,7 +119,7 @@
   }
 }
 .error-message {
-  color: #e74c3c;
+  color: #e2401c;
 }
 
 .success-message {
@@ -121,7 +133,7 @@
   display: block;
   margin-top: 0.5em;
   font-size: 0.9em;
-  color: #e74c3c;
+  color: #e2401c;
   font-weight: 500;
   visibility: hidden;
 }
@@ -131,8 +143,8 @@
 
 /* Style for input when it has an error */
 .woocommerce-MyAccount-content form .input-error {
-  border-color: #e74c3c !important;
-  box-shadow: inset 0 1px 1px #e74c3c !important;
+  border-color: #e2401c !important;
+  box-shadow: inset 0 1px 1px #e2401c !important;
 }
 .woocommerce-MyAccount-content form .validation-message {
   visibility: visible;
@@ -221,6 +233,9 @@
   color: #e2401c;
 }
 
+.woocerti-error-details {
+  border: 1px solid #e0e0e0;
+}
 .woocerti-error-details td {
   background-color: #fcebeb;
   border-top: none;

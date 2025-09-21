@@ -16,7 +16,7 @@ class Woocerti_Public {
      */
     public function __construct() {
         // Enqueue scripts and styles.
-        add_action('wp_enqueue_scripts', array($this, 'enqueue_public_assets'));
+        add_action('wp_enqueue_scripts', array($this, 'enqueue_public_assets'), 99);
         // Add custom menu items to the "My Account" page.
         add_filter('woocommerce_account_menu_items', array($this, 'add_plugin_account_links'), 40);
         // Render content for the custom endpoints.
@@ -69,14 +69,20 @@ class Woocerti_Public {
     public function enqueue_public_assets() {
         // Use the asset version defined in settings.php.
         $version = WOOCERTI_VERSION_ASSETS;
+
         // Enqueue CSS file.
         wp_enqueue_style('woocerti-public-style', WOOCERTI_PLUGIN_URL.'public/assets/css/style.css', array(), $version, 'all');
-        // Enqueue JS file.
-        wp_enqueue_style('woocerti-intl-tel-input-style', WOOCERTI_PLUGIN_URL.'public/assets/css/intlTelInput.min.css', array(), '25.10.6');
 
-        wp_enqueue_script('woocerti-intl-tel-input-script', WOOCERTI_PLUGIN_URL.'public/assets/js/libs/intlTelInput.min.js', array('jquery'), '25.10.6', true);
-
-        wp_enqueue_script('woocerti-public-script', WOOCERTI_PLUGIN_URL.'public/assets/js/main.js', array('jquery', 'woocerti-intl-tel-input-script'), $version, true);
+        $is_target_page = get_query_var('issue-certificate') !== false && isset($_GET['mode']) && $_GET['mode'] === 'single';
+        if ($is_target_page) {
+            wp_deregister_style('intel-css');
+            wp_deregister_script('intel-js');
+            wp_enqueue_style('woocerti-intl-tel-input-style', WOOCERTI_PLUGIN_URL.'public/assets/css/intlTelInput.min.css', array(), '25.10.6');
+            wp_enqueue_script('woocerti-intl-tel-input-script', WOOCERTI_PLUGIN_URL.'public/assets/js/libs/intlTelInput.min.js', array('jquery'), '25.10.6', true);
+            wp_enqueue_script('woocerti-public-script', WOOCERTI_PLUGIN_URL.'public/assets/js/main.js', array('jquery', 'woocerti-intl-tel-input-script'), $version, true);
+        } else {
+            wp_enqueue_script('woocerti-public-script', WOOCERTI_PLUGIN_URL.'public/assets/js/main.js', array('jquery'), $version, true);
+        }
 
         // Get the current logged-in user's data
         $current_user = wp_get_current_user();

@@ -3,8 +3,33 @@
  */
 jQuery(document).ready(function($) {
     const courseForm = $('#course-form');
-    // var form = $('#course-form');
     if (courseForm.length) {
+        const $referenceInput = $('#course_name');
+
+        if ($referenceInput.length) {
+            const referenceStyles = window.getComputedStyle($referenceInput[0]);
+
+            const $dateInput = $('#course_date');
+            const $selectField = $('#certification_fee_type');
+
+            const propertiesToCopy = [
+                'padding', 'border', 'border-radius', 'background-color', 'color', 'font-size', 'line-height'
+            ];
+
+            if ($dateInput.length) {
+                propertiesToCopy.forEach(prop => {
+                    $dateInput[0].style.setProperty(prop, referenceStyles.getPropertyValue(prop), 'important');
+                });
+            }
+
+            if ($selectField.length) {
+                propertiesToCopy.forEach(prop => {
+                    $selectField[0].style.setProperty(prop, referenceStyles.getPropertyValue(prop), 'important');
+                });
+            }
+
+        }
+
         if ($('#certification_fee_type').val() === 'Percentage') {
             $('#certification_fee_value').attr('max', '100');
         } else {
@@ -232,6 +257,31 @@ jQuery(document).ready(function($) {
     };
 
     if (issueForm.length) {
+        const $referenceInput = $('#single_student_first_name');
+
+        if ($referenceInput.length) {
+            const referenceStyles = window.getComputedStyle($referenceInput[0]);
+
+            const $documentTypeInput = $('#single_student_document_type');
+            const $inssuedInField = $('#single_student_inssued_in');
+
+            const propertiesToCopy = [
+                'padding', 'border', 'border-radius', 'background-color', 'color', 'font-size', 'line-height'
+            ];
+
+            if ($documentTypeInput.length) {
+                propertiesToCopy.forEach(prop => {
+                    $documentTypeInput[0].style.setProperty(prop, referenceStyles.getPropertyValue(prop), 'important');
+                });
+            }
+
+            if ($inssuedInField.length) {
+                propertiesToCopy.forEach(prop => {
+                    $inssuedInField[0].style.setProperty(prop, referenceStyles.getPropertyValue(prop), 'important');
+                });
+            }
+
+        }
         // Initialize intl-tel-input for the phone number field
         if (phoneInput && typeof woocerti_data.iti_phone !== 'undefined') {
             iti = window.intlTelInput(phoneInput, {

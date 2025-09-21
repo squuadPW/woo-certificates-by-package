@@ -13,7 +13,7 @@
                 <div class="form-row form-row--three-fields">
                     <p class="form-row-field">
                         <label for="single_student_document_type"><?php echo __('Document Type', 'woocertificatespackage'); ?> <span class="required">*</span></label>
-                        <select class="input-text" name="single_student_document_type" id="single_student_document_type">
+                        <select class="" name="single_student_document_type" id="single_student_document_type">
                             <option value="" selected="selected"><?php echo __('Select an option', 'woocertificatespackage'); ?></option>
                             <option value="passport"><?php echo __('Passport', 'woocertificatespackage'); ?></option>
                             <option value="identification_document"><?php echo __('Identification Document', 'woocertificatespackage'); ?></option>
@@ -23,12 +23,12 @@
                     </p>
                     <p class="form-row-field">
                         <label for="single_student_document_number"><?php echo __('Document Number', 'woocertificatespackage'); ?> <span class="required">*</span></label>
-                        <input type="text" class="input-text" name="single_student_document_number" id="single_student_document_number" />
+                        <input type="text" class="" name="single_student_document_number" id="single_student_document_number" />
                         <span class="validation-message"></span>
                     </p>
                     <p id="nationality-container" style="display: none;" class="form-row-field">
                         <label for="single_student_inssued_in"><?php echo __('Document issued in?', 'woocertificatespackage'); ?> <span class="required">*</span></label>
-                        <select class="input-text" name="single_student_inssued_in" id="single_student_inssued_in">
+                        <select class="" name="single_student_inssued_in" id="single_student_inssued_in">
                             <option value=""><?php echo __('Select country', 'woocertificatespackage'); ?></option>
                         </select>
                         <span class="validation-message"></span>
@@ -37,34 +37,34 @@
                 <div class="form-row">
                     <p class="form-row-field">
                         <label for="single_student_first_name"><?php echo __('First Name', 'woocertificatespackage'); ?> <span class="required">*</span></label>
-                        <input type="text" class="input-text" name="single_student_first_name" id="single_student_first_name" />
+                        <input type="text" class="" name="single_student_first_name" id="single_student_first_name" />
                         <span class="validation-message"></span>
                     </p>
                     <p class="form-row-field">
                         <label for="single_student_last_name"><?php echo __('Last Name', 'woocertificatespackage'); ?> <span class="required">*</span></label>
-                        <input type="text" class="input-text" name="single_student_last_name" id="single_student_last_name" />
+                        <input type="text" class="" name="single_student_last_name" id="single_student_last_name" />
                         <span class="validation-message"></span>
                     </p>
                 </div>
                 <div class="form-row">
                     <p class="form-row-field">
                         <label for="phone_number"><?php echo __('Phone Number', 'woocertificatespackage'); ?></label>
-                        <input type="tel" class="input-text" name="phone_number" id="phone_number" />
+                        <input type="tel" class="" name="phone_number" id="phone_number" />
                         <span class="validation-message"></span>
                     </p>
                     <p class="form-row-field">
                         <label for="single_student_email"><?php echo __('Student Email', 'woocertificatespackage'); ?> <span class="required">*</span></label>
-                        <input type="email" class="input-text" name="single_student_email" id="single_student_email" />
+                        <input type="email" class="" name="single_student_email" id="single_student_email" />
                         <span class="validation-message"></span>
                     </p>
                 </div>
-                <p>
+                <p class="p-legends">
                     <span class="form-required-fields-note">
                         <?php echo __('Fields marked with * are required', 'woocertificatespackage'); ?>
                     </span>
                 </p>
                 <p class="p-buttons">
-                    <button type="submit" class="woocommerce-button button woocerti-issue-submit"><?php echo __('Issue Certificate', 'woocertificatespackage'); ?></button>
+                    <button type="submit" class="woocommerce-button button button-primary btn-course woocerti-issue-submit"><?php echo __('Issue Certificate', 'woocertificatespackage'); ?></button>
                 </p>
             </form>
         </div>
@@ -148,7 +148,11 @@
                 <p class="form-row">
                     <input type="hidden" name="course_id" value="<?php echo esc_attr($course_id); ?>" />
                     <?php wp_nonce_field('woocerti_issue_certificate_action', 'woocerti_issue_certificate_nonce'); ?>
-                    <button type="submit" class="woocommerce-button button woocerti-issue-submit"><?php echo __('Upload and Issue', 'woocertificatespackage'); ?></button>
+                </p>
+                <p class="p-buttons">
+                    <button type="submit" class="woocommerce-button button button-primary btn-course woocerti-issue-submit">
+                        <?php echo __('Upload and Issue', 'woocertificatespackage'); ?>
+                    </button>
                 </p>
             </form>
             <?php
