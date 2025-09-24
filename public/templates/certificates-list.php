@@ -26,6 +26,9 @@
         </thead>
         <tbody>
             <?php foreach ($certificates_by_course as $certificate_data) : ?>
+                <?php
+                    $issue_certificate_url = wc_get_account_endpoint_url('issue-certificate');
+                ?>
                 <tr class="woocommerce-MyAccount-certificates-table__row">
                     <td class="woocommerce-MyAccount-certificates-table__cell woocommerce-MyAccount-certificates-table__cell--course-name" data-title="<?php echo esc_attr(__('Course Name', 'woocertificatespackage')); ?>">
                         <?php echo esc_html($certificate_data->course_name); ?>
@@ -34,7 +37,13 @@
                         <?php echo esc_html($certificate_data->quantity_purchased); ?>
                     </td>
                     <td class="woocommerce-MyAccount-certificates-table__cell woocommerce-MyAccount-certificates-table__cell--total-issued" data-title="<?php echo esc_attr(__('Total Issued', 'woocertificatespackage')); ?>">
-                        <?php echo esc_html($certificate_data->total_issued); ?>
+                        <?php if ($certificate_data->total_issued > 0) : ?>
+                            <a href="<?php echo esc_url(add_query_arg(array('action' => 'list_issued', 'course_id' => $certificate_data->id_course), $issue_certificate_url)); ?>">
+                                <?php echo esc_html($certificate_data->total_issued); ?>
+                            </a>
+                        <?php else : ?>
+                            <?php echo esc_html($certificate_data->total_issued); ?>
+                        <?php endif; ?>
                     </td>
                     <td class="woocommerce-MyAccount-certificates-table__cell woocerti-actions" data-title="<?php echo esc_attr(__('Actions', 'woocertificatespackage')); ?>">
                         <?php if ($certificate_data->total_issued !== $certificate_data->quantity_purchased) : ?>

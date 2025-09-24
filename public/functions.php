@@ -90,6 +90,12 @@ class Woocerti_Public {
 
         $nationalities = $this->get_sorted_nationalities();
 
+        $my_account_page_id = get_option('woocommerce_myaccount_page_id');
+        $my_account_url = ($my_account_page_id) ? get_permalink($my_account_page_id) : get_home_url();
+
+        // Construye la URL base para el punto de acceso "issue-certificate"
+        $issue_certificate_url = add_query_arg('issue-certificate', '', $my_account_url);
+
         // Pass messages and user data from PHP to JavaScript
         $data_to_pass = array(
             'messages' => array(
@@ -137,6 +143,10 @@ class Woocerti_Public {
             'text_forms' => array(
                 'btn_submit_issue_certificate' => __('Issue Certificate', 'woocertificatespackage'),
                 'txt_btn_issuing' => __('Issuing...', 'woocertificatespackage'),
+                'btn_view_issued_certificates' => __('View Issued Certificates', 'woocertificatespackage'),
+            ),
+            'endpoints' => array(
+                'issue_certificate_page' => $issue_certificate_url,
             ),
         );
         wp_localize_script('woocerti-public-script', 'woocerti_data', $data_to_pass);
@@ -924,19 +934,86 @@ class Woocerti_Public {
 
         // Check if the user wants to see the list of issued certificates
         if (isset($_GET['action']) && $_GET['action'] === 'list_issued' && $course_id) {
-            // Get the issued students list from the transient
-            $issued_students = get_transient('woocerti_issued_students_'.$user_id);
+            // Get the table names with the WordPress prefix
+            $certificates_table = $wpdb->prefix.'certificates';
+            $participants_table = $wpdb->prefix.'participants';
+            $course_participants_table = $wpdb->prefix.'course_participants';
+            $courses_table = $wpdb->prefix.'courses';
 
-            // Clear the transient after retrieving the data
-            delete_transient('woocerti_issued_students_'.$user_id);
+            $posts_per_page = WOOCERTI_POSTS_PER_PAGE;
+            $current_page = max(1, get_query_var('pageds'));
+            $offset = ($current_page - 1) * $posts_per_page;
+
+            $total_issued_students_query = $wpdb->prepare("
+                SELECT COUNT(cp.id_course_participant)
+                FROM `$course_participants_table` AS cp
+                INNER JOIN
+                    `$participants_table` AS p ON cp.id_participant = p.id_participant
+                INNER JOIN
+                    `$courses_table` AS c ON cp.id_course = c.id_course
+                WHERE
+                    cp.id_course = %d AND c.id_user = %d
+            ", $course_id, $user_id);
+
+            $total_records = $wpdb->get_var($total_issued_students_query);
+            $total_pages = ceil($total_records / $posts_per_page);
+
+            // Query to get the list of issued students for the course
+            $issued_students_query = $wpdb->prepare("
+                SELECT
+                    cp.id_course_participant,
+                    p.id_participant,
+                    CONCAT(p.first_name, ' ', p.last_name) AS full_name,
+                    p.email,
+                    p.document_number,
+                    cp.date_created
+                FROM `$course_participants_table` AS cp
+                INNER JOIN `$participants_table` AS p ON cp.id_participant = p.id_participant
+                INNER JOIN `$courses_table` AS c ON cp.id_course = c.id_course
+                WHERE cp.id_course = %d AND c.id_user = %d
+                ORDER BY cp.date_created DESC
+                LIMIT %d OFFSET %d
+            ", $course_id, $user_id, $posts_per_page, $offset);
+            $issued_students = $wpdb->get_results($issued_students_query, ARRAY_A);
+
+            $endpoint_url = wc_get_account_endpoint_url('issue-certificate');
+
+            // Query to get the summary of purchased and available certificates
+            $certificate_summary_query = $wpdb->prepare("
+                SELECT
+                    SUM(quantity_purchased) AS purchased,
+                    SUM(quantity_available) AS available
+                FROM
+                    `$certificates_table`
+                WHERE
+                    id_course = %d
+            ", $course_id);
+            $certificate_summary = $wpdb->get_row($certificate_summary_query, ARRAY_A);
+
+            // Get the course name
+            $course_record = $wpdb->get_row($wpdb->prepare(
+                "SELECT course_name FROM `$courses_table` WHERE id_course = %d",
+                $course_id
+            ));
+            $course_name = $course_record ? $course_record->course_name : '';
+
+            // $issued_count = $certificate_summary['purchased'] - $certificate_summary['available'];
+            $certificate_summary['issued_count'] = $certificate_summary['purchased'] - $certificate_summary['available'];
+            // var_dump($certificate_summary);
+
             wc_get_template(
                 'issued-certificates-list.php',
                 array(
                     'course_id' => $course_id,
-                    'issued_students' => $issued_students,
+                    'course_name' => $course_name,
+                    'students' => $issued_students,
+                    'certificate_summary' => $certificate_summary,
+                    'total_pages' => $total_pages,
+                    'endpoint_url' => $endpoint_url,
+                    'current_page' => $current_page,
                 )
             );
-            return; // Stop the function here
+            return;
         }
 
         // Check if the course exists and belongs to the current user

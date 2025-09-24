@@ -384,6 +384,13 @@ jQuery(document).ready(function($) {
             return isValid;
         }
 
+        // Function to show a single message
+        function showMessageSingle(message, type = 'success') {
+            const messageDiv = $('#woocerti-response-message');
+            messageDiv.removeClass('woocommerce-message woocommerce-error').addClass(`woocommerce-${type}`);
+            messageDiv.html(message).show();
+        }
+
         if (documentTypeSelect.length && nationalityContainer.length) {
             const toggleNationalityField = () => {
                 const selectedValue = documentTypeSelect.val();
@@ -468,9 +475,22 @@ jQuery(document).ready(function($) {
                 submitButton.prop('disabled', false).text(woocerti_data.text_forms.btn_submit_issue_certificate);
 
                 if (resp.success) {
-                    showMessage([resp.data.message], 'success');
-                    // Opcional: limpiar el formulario
+                    const issueCertificateBaseUrl = woocerti_data.endpoints.issue_certificate_page;
                     issueForm.trigger('reset');
+                    const courseId = issueForm.find('input[name="course_id"]').val();
+                    const viewCertificatesUrl = new URL(issueCertificateBaseUrl);
+                    viewCertificatesUrl.searchParams.append('course_id', courseId);
+                    viewCertificatesUrl.searchParams.append('action', 'list_issued');
+
+                    const successMessageHtml = `
+                        <p class="success-message">${resp.data.message}</p>
+                        <p class="p-buttons">
+                            <a href="${viewCertificatesUrl.href}" class="woocommerce-button button btn-course">
+                                ${woocerti_data.text_forms.btn_view_issued_certificates}
+                            </a>
+                        </p>
+                    `;
+                    showMessageSingle(successMessageHtml, 'success');
                 } else {
                     if (resp.data && resp.data.messages) {
                         showMessage(resp.data.messages, 'error');

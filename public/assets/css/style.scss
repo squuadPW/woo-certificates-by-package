@@ -62,24 +62,6 @@ $color-red: #e2401c;
             }
         }
 
-        .p-buttons {
-            .button {
-                margin-right: 1em;
-            }
-
-            .btn-course {
-                margin: 0;
-                margin-top: 1rem;
-                width: initial;
-                padding: 5px 20px !important;
-                text-align: center;
-                border-radius: 20px;
-                &:last-child {
-                    margin-left: 1em;
-                }
-            }
-        }
-
         /* Width rules for fields */
         > p {
             flex-basis: 100%; /* 100% width for single-column fields */
@@ -302,4 +284,85 @@ $color-red: #e2401c;
 .error-detail-content {
     padding: 10px 15px;
     border-left: 3px solid $color-red;
+}
+
+.p-buttons {
+    .button {
+        margin-right: 1em;
+    }
+
+    .btn-course {
+        margin: 0;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        width: initial;
+        padding: 5px 20px !important;
+        text-align: center;
+        border-radius: 20px;
+        &:last-child {
+            margin-left: 1em;
+        }
+    }
+}
+
+.woocerti-certificate-summary {
+    background: #f8f8f8;
+    border: 1px solid #eee;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+
+    .summary-title {
+        font-size: 1.5em;
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #333;
+        font-weight: 600;
+    }
+
+    .summary-cards-container {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .summary-card {
+        flex: 1 1 200px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px 15px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+
+        h4 {
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .summary-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--primary-color);;
+            margin: 0;
+            line-height: 1;
+        }
+    }
+
+    /* Responsive for smaller screens */
+    @media (max-width: 768px) {
+        .summary-cards-container {
+            flex-direction: column;
+        }
+    }
+}
+
+.woocommerce-MyAccount-certificates-table__cell--total-issued {
+    a {
+        color: var(--primary-color);
+        text-decoration: underline !important;
+    }
 }
