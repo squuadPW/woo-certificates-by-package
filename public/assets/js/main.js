@@ -2,6 +2,13 @@
  * JavaScript logic for the public-facing side of the WooCommerce Certificates by Package plugin.
  */
 jQuery(document).ready(function($) {
+    const currentUrl = window.location.href;
+    if (currentUrl.includes('issue-certificate')) {
+        const $certificatesMenuItem = $('.woocommerce-MyAccount-navigation-link--certificates');
+        $('.woocommerce-MyAccount-navigation-link').removeClass('is-active');
+        $certificatesMenuItem.addClass('is-active');
+    }
+
     const courseForm = $('#course-form');
     if (courseForm.length) {
         const $referenceInput = $('#course_name');
@@ -256,6 +263,13 @@ jQuery(document).ready(function($) {
         responseMessageContainer.append(ul).fadeIn();
     };
 
+    // Function to show a single message
+    function showMessageSingle(message, type = 'success') {
+        const messageDiv = $('#woocerti-response-message');
+        messageDiv.removeClass('woocommerce-message woocommerce-error').addClass(`woocommerce-${type}`);
+        messageDiv.html(message).show();
+    }
+
     if (issueForm.length) {
         const $referenceInput = $('#single_student_first_name');
 
@@ -384,13 +398,6 @@ jQuery(document).ready(function($) {
             return isValid;
         }
 
-        // Function to show a single message
-        function showMessageSingle(message, type = 'success') {
-            const messageDiv = $('#woocerti-response-message');
-            messageDiv.removeClass('woocommerce-message woocommerce-error').addClass(`woocommerce-${type}`);
-            messageDiv.html(message).show();
-        }
-
         if (documentTypeSelect.length && nationalityContainer.length) {
             const toggleNationalityField = () => {
                 const selectedValue = documentTypeSelect.val();
@@ -478,9 +485,11 @@ jQuery(document).ready(function($) {
                     const issueCertificateBaseUrl = woocerti_data.endpoints.issue_certificate_page;
                     issueForm.trigger('reset');
                     const courseId = issueForm.find('input[name="course_id"]').val();
+                    const currentUrl = window.location.href;
                     const viewCertificatesUrl = new URL(issueCertificateBaseUrl);
                     viewCertificatesUrl.searchParams.append('course_id', courseId);
                     viewCertificatesUrl.searchParams.append('action', 'list_issued');
+                    viewCertificatesUrl.searchParams.append('return_url', currentUrl);
 
                     const successMessageHtml = `
                         <p class="success-message">${resp.data.message}</p>
@@ -630,8 +639,24 @@ jQuery(document).ready(function($) {
         try {
             const results = JSON.parse(bulkResultsContainer.attr('data-results'));
             if (results.general_messages && results.general_messages.length > 0) {
+                const issueCertificateBaseUrl = woocerti_data.endpoints.issue_certificate_page;
+                const courseId = bulkUploadForm.find('input[name="course_id"]').val();
+                const currentUrl = window.location.href;
+                const viewCertificatesUrl = new URL(issueCertificateBaseUrl);
+                viewCertificatesUrl.searchParams.append('course_id', courseId);
+                viewCertificatesUrl.searchParams.append('action', 'list_issued');
+                viewCertificatesUrl.searchParams.append('return_url', currentUrl);
+
+                const successMessageHtml = `
+                    <p class="success-message">${results.general_messages}</p>
+                    <p class="p-buttons">
+                        <a href="${viewCertificatesUrl.href}" class="woocommerce-button button btn-course">
+                            ${woocerti_data.text_forms.btn_view_issued_certificates}
+                        </a>
+                    </p>
+                `;
                 const messageType = results.success ? 'success' : 'error';
-                showMessage(results.general_messages, messageType);
+                showMessageSingle(successMessageHtml, messageType);
             }
 
             if (results.detailed_results && results.detailed_results.length > 0) {
@@ -703,6 +728,66 @@ jQuery(document).ready(function($) {
         } catch (error) {
             showMessage([woocerti_data.messages.bulk_results_error], 'error');
         }
+    }
+
+    const $buyForm = $('#woocerti-add-to-cart-form');
+    if ($buyForm.length) {
+        const $quantityInput = $('#quantity');
+        const $totalDisplay = $('#woocerti_total');
+        const unitPrice = parseFloat($('#single_unit_price').val());
+        const checkoutUrl = woocerti_data.checkout_url;
+        console.log("checkoutUrl: ",checkoutUrl);
+
+        // Function to update the total
+        const updatePriceTotal = () => {
+            const quantity = parseInt($quantityInput.val()) || 1;
+            // Ensure quantity is positive
+            if (quantity < 1) {
+                $quantityInput.val(1);
+            }
+            const total = unitPrice * quantity;
+            let formattedTotal = total.toFixed(2).replace('.', ',');
+            $totalDisplay.text(`$${formattedTotal}`);
+
+            if (woocerti_data.currency_symbol) {
+                formattedTotal = total.toLocaleString('es-ES', {
+                    style: 'currency',
+                    currency: woocerti_data.currency_code
+                });
+                $totalDisplay.text(formattedTotal);
+            } else {
+                $totalDisplay.text(total.toFixed(2));
+            }
+        };
+
+        // Event listener for quantity change
+        $quantityInput.on('change keyup', updatePriceTotal);
+
+        // Intercept form submission to redirect to checkout
+        $buyForm.on('submit', function(e) {
+            e.preventDefault();
+            const $form = $(this);
+            const formData = $form.serialize();
+
+            $.ajax({
+                type: 'POST',
+                url: woocerti_data.ajax_url,
+                data: formData + '&action=woocerti_add_to_cart_checkout',
+                success: function(response) {
+                    if (response.success) {
+                        window.location.href = checkoutUrl;
+                    } else {
+                        console.error("AJAX Error Response: ", response);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX Error: ", status, error);
+                }
+            });
+        });
+
+        // Ensure initial total is displayed correctly on page load
+        updatePriceTotal();
     }
 
 });

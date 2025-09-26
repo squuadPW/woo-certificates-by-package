@@ -1,6 +1,5 @@
 <div class="woocerti-issued-list-header">
     <h2><?php echo esc_html($course_name); ?></h2>
-    <!-- <h2><?php echo __('Certificates Issued for: ', 'woocertificatespackage').esc_html($course_name); ?></h2> -->
 </div>
 
 <?php if (empty($students)) : ?>
@@ -87,7 +86,13 @@
             <?php echo paginate_links($paginate_args); ?>
         </div>
     <?php } ?>
-    <p class="return-link">
-        <a href="<?php echo esc_url(wc_get_account_endpoint_url('certificates')); ?>"><?php echo __('Return to My Certificates', 'woocertificatespackage'); ?></a>
+    <p class="p-buttons">
+        <?php
+            // Check if a return URL was passed
+            $return_url = isset($_GET['return_url']) ? esc_url($_GET['return_url']) : wc_get_account_endpoint_url('certificates');
+        ?>
+        <a href="<?php echo esc_url($return_url); ?>" class="woocommerce-button button btn-course woocerti-ml-0">
+            <?php echo __('Return to Previous Page', 'woocertificatespackage'); ?>
+        </a>
     </p>
 <?php endif; ?>

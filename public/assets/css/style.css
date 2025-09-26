@@ -114,6 +114,10 @@
   margin-bottom: 0.5rem;
 }
 
+.woocerti-ml-0 {
+  margin-left: 0 !important;
+}
+
 /* Styles for client-side validation */
 .woocommerce-MyAccount-content form .validation-message {
   display: block;
@@ -300,4 +304,80 @@
 .woocommerce-MyAccount-certificates-table__cell--total-issued a {
   color: var(--primary-color);
   text-decoration: underline !important;
+}
+
+/*
+ * ====================================================================
+ * Styles for the Buy Certificates Form
+ * ====================================================================
+ */
+.woocerti-buy-certificates-card-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.woocerti-buy-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  width: 100%;
+}
+.woocerti-buy-card .woocerti-buy-certificates-header {
+  text-align: center;
+  margin: 0 0 20px 0;
+}
+.woocerti-buy-card .woocerti-buy-certificates-header h2 {
+  font-size: 1.8em;
+  color: #333;
+  margin: 0;
+  margin-bottom: 0 !important;
+}
+.woocerti-buy-card .woocerti-course-details p {
+  font-size: 1.1em;
+  margin: 0.5em 0;
+}
+.woocerti-buy-card .woocerti-course-details p strong {
+  font-weight: 600;
+}
+.woocerti-buy-card .form-row--two-fields {
+  display: flex;
+  gap: 20px;
+  flex-wrap: unset !important;
+  justify-content: unset !important;
+}
+.woocerti-buy-card .form-row--two-fields .form-row-field {
+  flex: 1 1 45%;
+}
+.woocerti-buy-card .large-label {
+  font-size: 1.2em;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 8px;
+}
+.woocerti-buy-card .large-input {
+  padding: 12px 10px !important;
+  font-size: 1.2em !important;
+  height: auto !important;
+}
+.woocerti-buy-card .total-display-wrapper .total-value {
+  font-size: 2em;
+  font-weight: bold;
+  color: #1a7e4b;
+  display: block;
+  margin-top: 5px;
+}
+.woocerti-buy-card .p-buttons {
+  margin-top: 30px;
+  text-align: center;
+}
+.woocerti-buy-card .p-buttons .woocerti-checkout-button {
+  width: 100%;
+  padding: 10px 0 !important;
+}
+.woocerti-buy-card .woocerti-add-to-cart-form {
+  margin-bottom: 0 !important;
 }/*# sourceMappingURL=style.css.map */

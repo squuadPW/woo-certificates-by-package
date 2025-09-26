@@ -28,6 +28,7 @@ class Woocerti_Public {
         // Handle AJAX request for single certificate form
         add_action('wp_ajax_woocerti_issue_single_certificate', array($this, 'handle_ajax_issue_certificate'));
         add_action('wp_ajax_nopriv_woocerti_issue_single_certificate', array($this, 'handle_ajax_issue_certificate'));
+        add_action('wp_ajax_woocerti_add_to_cart_checkout', array($this, 'woocerti_add_to_cart_checkout'));
         // Register custom endpoints.
         add_action('init', array($this, 'add_plugin_endpoints'));
         // Add custom query variables to handle pagination.
@@ -140,6 +141,9 @@ class Woocerti_Public {
             'deleteConfirmText' => __('Are you sure you want to delete this course? This action cannot be undone.', 'woocertificatespackage'),
             'nationalities' => $nationalities,
             'ajax_url' => admin_url('admin-ajax.php'),
+            'checkout_url' => esc_url(wc_get_checkout_url()),
+            'currency_code' => get_woocommerce_currency(),
+            'currency_symbol' => get_woocommerce_currency_symbol(),
             'text_forms' => array(
                 'btn_submit_issue_certificate' => __('Issue Certificate', 'woocertificatespackage'),
                 'txt_btn_issuing' => __('Issuing...', 'woocertificatespackage'),
@@ -669,6 +673,7 @@ class Woocerti_Public {
                 'certification_fee_type' => $certification_fee_type,
                 'certification_fee_value' => $certification_fee_value,
                 'date_updated' => $current_date,
+                'status' => $status_to_save,
             );
 
             if ($course_id > 0) {
@@ -695,7 +700,6 @@ class Woocerti_Public {
                 // Insert new course
                 $data['id_user'] = $user_id;
                 $data['date_created'] = $current_date;
-                $data['status'] = $status_to_save;
                 $wpdb->insert(
                     $table_name,
                     $data
@@ -1329,6 +1333,46 @@ class Woocerti_Public {
         }
 
         return $nationalities;
+    }
+
+    /**
+     * Handle AJAX request to add a product to the cart and prepare for checkout redirect.
+     * This function is only for logged-in users (wp_ajax_).
+     */
+    public function woocerti_add_to_cart_checkout() {
+        if (!isset($_POST['add-to-cart']) || !isset($_POST['quantity'])) {
+            wp_send_json_error(array('message' => __('Missing product ID or quantity.', 'woocertificatespackage')));
+            wp_die();
+        }
+
+        $product_id = absint($_POST['add-to-cart']);
+        $quantity = absint($_POST['quantity']);
+        $course_id = isset($_POST['course_id']) ? absint($_POST['course_id']) : 0;
+
+        if (!isset(WC()->cart)) {
+            wc_maybe_load_cart();
+        }
+
+        WC()->cart->empty_cart(true);
+
+        $cart_item_key = WC()->cart->add_to_cart(
+            $product_id,
+            $quantity,
+            0,
+            array(),
+            array('woocerti_course_id' => $course_id)
+        );
+
+        if ($cart_item_key) {
+            wp_send_json_success(array(
+                'message' => __('Product added to cart successfully.', 'woocertificatespackage'),
+                'cart_item_key' => $cart_item_key
+            ));
+        } else {
+            wp_send_json_error(array('message' => __('Error adding product to cart.', 'woocertificatespackage')));
+        }
+
+        wp_die();
     }
 
     // // Example usage for 'woocerti_issue_certificate'
