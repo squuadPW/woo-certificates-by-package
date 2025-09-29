@@ -45,7 +45,7 @@
   margin-right: 0 !important;
 }
 .woocommerce-MyAccount-content form > p {
-  flex-basis: 100%; /* 100% width for single-column fields */
+  flex-basis: 100%;
 }
 .woocommerce-MyAccount-content form > p .form-required-fields-note {
   font-style: italic;
@@ -70,10 +70,10 @@
   outline: none;
 }
 .woocommerce-MyAccount-content form .form-row .form-row-field {
-  flex: 1 1 calc(50% - 1em); /* Each field takes 50% of the width */
+  flex: 1 1 calc(50% - 1em);
 }
 .woocommerce-MyAccount-content form .form-row--three-fields .form-row-field {
-  flex: 1 1 calc(33.333% - 1em); /* Each field takes one-third of the width */
+  flex: 1 1 calc(33.333% - 1em);
 }
 .woocommerce-MyAccount-content form .form-row .quantity-input-wrapper label {
   font-weight: 600;
@@ -380,4 +380,59 @@
 }
 .woocerti-buy-card .woocerti-add-to-cart-form {
   margin-bottom: 0 !important;
+}
+
+/* ====================================================================
+ * Estilos para los Iconos de Ordenación en la Tabla de Cursos
+ * ==================================================================== */
+.woocommerce-MyAccount-courses-table th.sorted a, .woocommerce-MyAccount-courses-table th.sortable a {
+  position: relative;
+  padding-right: 18px;
+  display: inline-block;
+}
+.woocommerce-MyAccount-courses-table .sort-icon {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  line-height: 1;
+  font-style: normal;
+  font-weight: normal;
+  font-size: 10px;
+  color: #888;
+  height: 20px;
+}
+.woocommerce-MyAccount-courses-table .sort-icon:before {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.woocommerce-MyAccount-courses-table .sort-icon:after {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+.woocommerce-MyAccount-courses-table .woocerti-sort-both:before {
+  content: "▲";
+  opacity: 0.3;
+}
+.woocommerce-MyAccount-courses-table .woocerti-sort-both:after {
+  content: "▼";
+  opacity: 0.3;
+}
+.woocommerce-MyAccount-courses-table .woocerti-sort-up:before {
+  content: "▲";
+  color: var(--primary-color);
+}
+.woocommerce-MyAccount-courses-table .woocerti-sort-up:after {
+  content: "▼";
+  opacity: 0.3;
+}
+.woocommerce-MyAccount-courses-table .woocerti-sort-down:before {
+  content: "▲";
+  opacity: 0.3;
+}
+.woocommerce-MyAccount-courses-table .woocerti-sort-down:after {
+  content: "▼";
+  color: var(--primary-color);
 }/*# sourceMappingURL=style.css.map */

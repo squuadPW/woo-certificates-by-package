@@ -425,6 +425,18 @@ class Woocerti_Public {
         $table_name = $wpdb->prefix.'courses';
         $user_id = get_current_user_id();
 
+        // Sorting logic: Default 'course_name' ASC
+        $current_orderby = isset($_GET['orderby']) ? sanitize_key($_GET['orderby']) : 'course_name';
+        $current_order = isset($_GET['order']) ? strtoupper(sanitize_key($_GET['order'])) : 'ASC';
+
+        $allowed_orderby = array('course_name', 'status', 'date_created');
+        if (!in_array($current_orderby, $allowed_orderby)) {
+            $current_orderby = 'course_name';
+        }
+        if (!in_array($current_order, array('ASC', 'DESC'))) {
+            $current_order = 'ASC';
+        }
+
         // Pagination settings
         $posts_per_page = WOOCERTI_POSTS_PER_PAGE;
         $current_page = max(1, get_query_var('pageds')); // Gets the current page, default is 1
@@ -432,21 +444,29 @@ class Woocerti_Public {
 
         // Query to get the total number of courses (for pagination)
         $total_courses = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `$table_name` WHERE id_user = %d", $user_id));
-        $total_pages = ceil($total_courses / $posts_per_page); // Calcula el total de páginas
+        $total_pages = ceil($total_courses / $posts_per_page);
 
         // Check to get the courses on the current page
         $courses = $wpdb->get_results($wpdb->prepare("
             SELECT * FROM `$table_name`
             WHERE id_user = %d
-            ORDER BY date_created DESC
+            ORDER BY {$current_orderby} {$current_order}
             LIMIT %d OFFSET %d
         ", $user_id, $posts_per_page, $offset));
 
         $endpoint_url = wc_get_account_endpoint_url('courses');
 
-        // Include the template file.
+        // Include the template, passing the variables.
         $template_file = WOOCERTI_PLUGIN_DIR.'public/templates/courses-list.php';
         if (file_exists($template_file)) {
+            extract(array(
+                'courses' => $courses,
+                'current_page' => $current_page,
+                'total_pages' => $total_pages,
+                'endpoint_url' => $endpoint_url,
+                'current_orderby' => $current_orderby,
+                'current_order' => $current_order,
+            ));
             include $template_file;
         } else {
             echo '<p>'.__('Course list template file not found.', 'woocertificatespackage').'</p>';

@@ -4,6 +4,37 @@
         <a href="<?php echo esc_url($endpoint_url.'?action=create'); ?>" class="woocommerce-button button button-primary"><?php echo __('Create Course', 'woocertificatespackage'); ?></a>
     </p>
 </div>
+<?php
+    if (!function_exists('woocerti_get_sort_link')) {
+        function woocerti_get_sort_link($endpoint_url, $column, $current_orderby, $current_order) {
+            if ($current_orderby === $column) {
+                $new_order = $current_order === 'ASC' ? 'DESC' : 'ASC';
+                $icon_class = $current_order === 'ASC' ? 'woocerti-sort-up' : 'woocerti-sort-down';
+                $icon_html = '<i class="sort-icon '.$icon_class.'"></i>';
+                $class = 'sorted ' . strtolower($current_order);
+            } else {
+                $new_order = 'ASC';
+                $icon_html = '<i class="sort-icon woocerti-sort-both"></i>';
+                $class = 'sortable';
+            }
+
+            $query_args = array_diff_key($_GET, array_flip(['orderby', 'order']));
+            $query_args['orderby'] = $column;
+            $query_args['order'] = $new_order;
+
+            if (isset($query_args['pageds'])) {
+                unset($query_args['pageds']);
+            }
+
+            $url = esc_url(add_query_arg($query_args, $endpoint_url));
+
+            return array('url' => $url, 'icon' => $icon_html, 'class' => $class);
+        }
+    }
+
+    $course_name_sort = woocerti_get_sort_link($endpoint_url, 'course_name', $current_orderby, $current_order);
+    $status_sort = woocerti_get_sort_link($endpoint_url, 'status', $current_orderby, $current_order);
+?>
 <?php if (empty($courses) && $current_page == 1) : ?>
     <p><?php echo __('You have not created any courses yet.', 'woocertificatespackage'); ?></p>
 <?php elseif (empty($courses)) : ?>
@@ -12,8 +43,11 @@
     <table class="woocommerce-MyAccount-courses-table shop_table_responsive my_account_orders">
         <thead>
             <tr>
-                <th class="woocommerce-MyAccount-courses-table__header woocommerce-MyAccount-courses-table__header--course-name">
-                    <span class="nobr"><?php echo __('Course Name', 'woocertificatespackage'); ?></span>
+                <th class="woocommerce-MyAccount-courses-table__header woocommerce-MyAccount-courses-table__header--course-name <?php echo esc_attr($course_name_sort['class']); ?>">
+                    <a href="<?php echo $course_name_sort['url']; ?>">
+                        <span class="nobr"><?php echo __('Course Name', 'woocertificatespackage'); ?></span>
+                        <?php echo $course_name_sort['icon']; ?>
+                    </a>
                 </th>
                 <th class="woocommerce-MyAccount-courses-table__header woocommerce-MyAccount-courses-table__header--academic-hours">
                     <span class="nobr"><?php echo __('Duration', 'woocertificatespackage'); ?></span>
@@ -24,8 +58,11 @@
                 <th class="woocommerce-MyAccount-courses-table__header woocommerce-MyAccount-courses-table__header--price-certificate">
                     <span class="nobr"><?php echo __('Certificate price', 'woocertificatespackage'); ?></span>
                 </th>
-                <th class="woocommerce-MyAccount-courses-table__header woocommerce-MyAccount-courses-table__header--status">
-                    <span class="nobr"><?php echo __('Status', 'woocertificatespackage'); ?></span>
+                <th class="woocommerce-MyAccount-courses-table__header woocommerce-MyAccount-courses-table__header--status <?php echo esc_attr($status_sort['class']); ?>">
+                    <a href="<?php echo $status_sort['url']; ?>">
+                        <span class="nobr"><?php echo __('Status', 'woocertificatespackage'); ?></span>
+                        <?php echo $status_sort['icon']; ?>
+                    </a>
                 </th>
                 <th class="woocommerce-MyAccount-courses-table__header woocommerce-MyAccount-courses-table__header--actions">
                     <span class="nobr"><?php echo __('Actions', 'woocertificatespackage'); ?></span>
@@ -110,8 +147,18 @@
             'type'=> 'list',
         );
         // If there are already parameters in the URL, use 'add_query_arg'
+        $existing_args = array();
         if (isset($_GET['action'])) {
-            $paginate_args['add_args'] = array('action' => $_GET['action']);
+            $existing_args['action'] = $_GET['action'];
+        }
+        if (isset($_GET['orderby'])) {
+            $existing_args['orderby'] = $_GET['orderby'];
+        }
+        if (isset($_GET['order'])) {
+            $existing_args['order'] = $_GET['order'];
+        }
+        if (!empty($existing_args)) {
+            $paginate_args['add_args'] = $existing_args;
         }
     ?>
         <div class="woocommerce-pagination woocommerce-pagination--without-border woocommerce-courses-pagination">

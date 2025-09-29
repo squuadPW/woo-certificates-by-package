@@ -45,13 +45,6 @@ $color-red: #e2401c;
                     margin-right: 0;
                 }
 
-                // select {
-                //     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>');
-                //     background-repeat: no-repeat;
-                //     background-position: right 10px center;
-                //     outline: none;
-                // }
-
                 .iti {
                     width: 100%;
                 }
@@ -64,7 +57,7 @@ $color-red: #e2401c;
 
         /* Width rules for fields */
         > p {
-            flex-basis: 100%; /* 100% width for single-column fields */
+            flex-basis: 100%;
             .form-required-fields-note {
                 font-style: italic;
             }
@@ -90,13 +83,13 @@ $color-red: #e2401c;
             }
 
             .form-row-field {
-                flex: 1 1 calc(50% - 1em); /* Each field takes 50% of the width */
+                flex: 1 1 calc(50% - 1em);
             }
 
             /* Style for rows with three fields */
             &--three-fields {
                 .form-row-field {
-                    flex: 1 1 calc(33.333% - 1em); /* Each field takes one-third of the width */
+                    flex: 1 1 calc(33.333% - 1em);
                 }
             }
 
@@ -247,7 +240,7 @@ $color-red: #e2401c;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    min-height: 150px; // Asegura una altura mínima para el área de drop
+    min-height: 150px;
 
     &:hover {
         background-color: #f8f8f8;
@@ -350,7 +343,7 @@ $color-red: #e2401c;
         .summary-value {
             font-size: 2em;
             font-weight: bold;
-            color: var(--primary-color);;
+            color: var(--primary-color);
             margin: 0;
             line-height: 1;
         }
@@ -405,7 +398,6 @@ $color-red: #e2401c;
     }
 
     .woocerti-course-details {
-        // margin-bottom: 25px;
         p {
             font-size: 1.1em;
             margin: 0.5em 0;
@@ -417,7 +409,6 @@ $color-red: #e2401c;
 
     .form-row--two-fields {
         display: flex;
-        // gap: 20px;
         gap: 20px;
         flex-wrap: unset !important;
         justify-content: unset !important;
@@ -460,5 +451,72 @@ $color-red: #e2401c;
 
     .woocerti-add-to-cart-form {
         margin-bottom: 0 !important;
+    }
+}
+
+/* ====================================================================
+ * Estilos para los Iconos de Ordenación en la Tabla de Cursos
+ * ==================================================================== */
+.woocommerce-MyAccount-courses-table {
+    th.sorted a, th.sortable a {
+        position: relative;
+        padding-right: 18px;
+        display: inline-block;
+    }
+
+    .sort-icon {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        line-height: 1;
+        font-style: normal;
+        font-weight: normal;
+        font-size: 10px;
+        color: #888;
+        &:before {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        &:after {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        height: 20px;
+    }
+
+    .woocerti-sort-both {
+        &:before {
+            content: "\25B2";
+            opacity: 0.3;
+        }
+        &:after {
+            content: "\25BC";
+            opacity: 0.3;
+        }
+    }
+
+    .woocerti-sort-up {
+        &:before {
+            content: "\25B2";
+            color: var(--primary-color);
+        }
+        &:after {
+            content: "\25BC";
+            opacity: 0.3;
+        }
+    }
+
+    .woocerti-sort-down {
+        &:before {
+            content: "\25B2";
+            opacity: 0.3;
+        }
+        &:after {
+            content: "\25BC";
+            color: var(--primary-color);
+        }
     }
 }
