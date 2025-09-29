@@ -403,7 +403,7 @@ class Woocerti_Activator {
         ) $charset_collate;";
 
         // Define the SQL query to create the table Certificates
-        $sql_certificates = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}certificates` (
+        $sql_certificates = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}total_certificates` (
             `id_certificate` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             `id_wc_order` BIGINT(20) UNSIGNED NOT NULL,
             `id_course` BIGINT(20) UNSIGNED NOT NULL,

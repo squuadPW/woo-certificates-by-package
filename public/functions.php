@@ -338,7 +338,7 @@ class Woocerti_Public {
         global $wpdb;
         $user_id = get_current_user_id();
 
-        $certificates_table = $wpdb->prefix.'certificates';
+        $certificates_table = $wpdb->prefix.'total_certificates';
         $courses_table = $wpdb->prefix.'courses';
 
         // Sorting logic: Default 'course_name' ASC
@@ -980,7 +980,7 @@ class Woocerti_Public {
         // Check if the user wants to see the list of issued certificates
         if (isset($_GET['action']) && $_GET['action'] === 'list_issued' && $course_id) {
             // Get the table names with the WordPress prefix
-            $certificates_table = $wpdb->prefix.'certificates';
+            $certificates_table = $wpdb->prefix.'total_certificates';
             $participants_table = $wpdb->prefix.'participants';
             $course_participants_table = $wpdb->prefix.'course_participants';
             $courses_table = $wpdb->prefix.'courses';
@@ -1319,7 +1319,7 @@ class Woocerti_Public {
      */
     public function woocerti_issue_certificate($course_id) {
         global $wpdb;
-        $certificates_table = $wpdb->prefix.'certificates';
+        $certificates_table = $wpdb->prefix.'total_certificates';
         $courses_table = $wpdb->prefix.'courses';
 
         // 'quantity available > 0' is used to ensure that there are certificates to issue.

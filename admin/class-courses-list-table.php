@@ -98,7 +98,7 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
         global $wpdb;
         // Define table names
         $courses_table = $wpdb->prefix.'courses';
-        $certificates_table = $wpdb->prefix.'certificates';
+        $certificates_table = $wpdb->prefix.'total_certificates';
 
         $columns = $this->get_columns();
         $hidden = [];

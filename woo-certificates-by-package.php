@@ -127,7 +127,7 @@ add_action('plugins_loaded', 'woocerti_run_plugin');
  */
 function generate_certificate_records($order_id, $old_status, $new_status, $order) {
     global $wpdb;
-    $table_name = $wpdb->prefix.'certificates';
+    $table_name = $wpdb->prefix.'total_certificates';
     $current_date = current_time('mysql');
 
     if ($new_status === 'completed') {
