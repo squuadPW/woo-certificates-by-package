@@ -457,7 +457,8 @@ $color-red: #e2401c;
 /* ====================================================================
  * Estilos para los Iconos de Ordenación en la Tabla de Cursos
  * ==================================================================== */
-.woocommerce-MyAccount-courses-table {
+.woocommerce-MyAccount-courses-table,
+.woocommerce-MyAccount-certificates-table {
     th.sorted a, th.sortable a {
         position: relative;
         padding-right: 18px;

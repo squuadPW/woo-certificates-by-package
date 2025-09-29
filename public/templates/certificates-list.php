@@ -1,7 +1,36 @@
 <div class="woocerti-certificates-header">
     <h2><?php echo __('My Certificates', 'woocertificatespackage'); ?></h2>
 </div>
+<?php
+    if (!function_exists('woocerti_get_sort_link')) {
+        function woocerti_get_sort_link($endpoint_url, $column, $current_orderby, $current_order) {
+            if ($current_orderby === $column) {
+                $new_order = $current_order === 'ASC' ? 'DESC' : 'ASC';
+                $icon_class = $current_order === 'ASC' ? 'woocerti-sort-up' : 'woocerti-sort-down';
+                $icon_html = '<i class="sort-icon '.$icon_class.'"></i>';
+                $class = 'sorted ' . strtolower($current_order);
+            } else {
+                $new_order = 'ASC';
+                $icon_html = '<i class="sort-icon woocerti-sort-both"></i>';
+                $class = 'sortable';
+            }
 
+            $query_args = array_diff_key($_GET, array_flip(['orderby', 'order']));
+            $query_args['orderby'] = $column;
+            $query_args['order'] = $new_order;
+
+            if (isset($query_args['pageds'])) {
+                unset($query_args['pageds']);
+            }
+
+            $url = esc_url(add_query_arg($query_args, $endpoint_url));
+
+            return array('url' => $url, 'icon' => $icon_html, 'class' => $class);
+        }
+    }
+
+    $course_name_sort = woocerti_get_sort_link($endpoint_url, 'course_name', $current_orderby, $current_order);
+?>
 <?php if (empty($certificates_by_course) && $current_page == 1) : ?>
     <p><?php echo __('You have no certificates available for any courses yet.', 'woocertificatespackage'); ?></p>
 <?php elseif (empty($certificates_by_course)) : ?>
@@ -10,8 +39,11 @@
     <table class="woocommerce-MyAccount-certificates-table shop_table_responsive my_account_orders">
         <thead>
             <tr>
-                <th class="woocommerce-MyAccount-certificates-table__header woocommerce-MyAccount-certificates-table__header--course-name">
-                    <span class="nobr"><?php echo __('Course Name', 'woocertificatespackage'); ?></span>
+                <th class="woocommerce-MyAccount-certificates-table__header woocommerce-MyAccount-certificates-table__header--course-name <?php echo esc_attr($course_name_sort['class']); ?>">
+                    <a href="<?php echo $course_name_sort['url']; ?>">
+                        <span class="nobr"><?php echo __('Course Name', 'woocertificatespackage'); ?></span>
+                        <?php echo $course_name_sort['icon']; ?>
+                    </a>
                 </th>
                 <th class="woocommerce-MyAccount-certificates-table__header woocommerce-MyAccount-certificates-table__header--quantity-purchased">
                     <span class="nobr"><?php echo __('Total Purchased', 'woocertificatespackage'); ?></span>
@@ -75,8 +107,18 @@
             'type' => 'list',
         );
         // If there are already parameters in the URL, use 'add_query_arg'
+        $existing_args = array();
         if (isset($_GET['action'])) {
-            $paginate_args['add_args'] = array('action' => $_GET['action']);
+            $existing_args['action'] = $_GET['action'];
+        }
+        if (isset($_GET['orderby'])) {
+            $existing_args['orderby'] = $_GET['orderby'];
+        }
+        if (isset($_GET['order'])) {
+            $existing_args['order'] = $_GET['order'];
+        }
+        if (!empty($existing_args)) {
+            $paginate_args['add_args'] = $existing_args;
         }
     ?>
         <div class="woocommerce-pagination woocommerce-pagination--without-border woocommerce-certificates-pagination">

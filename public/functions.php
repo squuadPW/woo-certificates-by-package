@@ -341,6 +341,18 @@ class Woocerti_Public {
         $certificates_table = $wpdb->prefix.'certificates';
         $courses_table = $wpdb->prefix.'courses';
 
+        // Sorting logic: Default 'course_name' ASC
+        $current_orderby = isset($_GET['orderby']) ? sanitize_key($_GET['orderby']) : 'course_name';
+        $current_order = isset($_GET['order']) ? strtoupper(sanitize_key($_GET['order'])) : 'ASC';
+
+        $allowed_orderby = array('course_name');
+        if (!in_array($current_orderby, $allowed_orderby)) {
+            $current_orderby = 'course_name';
+        }
+        if (!in_array($current_order, array('ASC', 'DESC'))) {
+            $current_order = 'ASC';
+        }
+
         $posts_per_page = WOOCERTI_POSTS_PER_PAGE;
         $current_page = max(1, get_query_var('pageds'));
         $offset = ($current_page - 1) * $posts_per_page;
@@ -362,6 +374,7 @@ class Woocerti_Public {
                 INNER JOIN `$courses_table` AS co ON c.id_course = co.id_course
                 WHERE co.id_user = %d
                 GROUP BY co.id_course, co.course_name
+                ORDER BY co.{$current_orderby} {$current_order}
                 LIMIT %d OFFSET %d
             ", $user_id, $posts_per_page, $offset)
         );
@@ -371,6 +384,14 @@ class Woocerti_Public {
         // Include the template file.
         $template_file = WOOCERTI_PLUGIN_DIR.'public/templates/certificates-list.php';
         if (file_exists($template_file)) {
+            extract(array(
+                'certificates_by_course' => $certificates_by_course,
+                'current_page' => $current_page,
+                'total_pages' => $total_pages,
+                'endpoint_url' => $endpoint_url,
+                'current_orderby' => $current_orderby,
+                'current_order' => $current_order,
+            ));
             include $template_file;
         } else {
             echo '<p>'.__('Certificate list template file not found.', 'woocertificatespackage').'</p>';

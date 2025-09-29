@@ -385,12 +385,15 @@
 /* ====================================================================
  * Estilos para los Iconos de Ordenación en la Tabla de Cursos
  * ==================================================================== */
-.woocommerce-MyAccount-courses-table th.sorted a, .woocommerce-MyAccount-courses-table th.sortable a {
+.woocommerce-MyAccount-courses-table th.sorted a, .woocommerce-MyAccount-courses-table th.sortable a,
+.woocommerce-MyAccount-certificates-table th.sorted a,
+.woocommerce-MyAccount-certificates-table th.sortable a {
   position: relative;
   padding-right: 18px;
   display: inline-block;
 }
-.woocommerce-MyAccount-courses-table .sort-icon {
+.woocommerce-MyAccount-courses-table .sort-icon,
+.woocommerce-MyAccount-certificates-table .sort-icon {
   position: absolute;
   right: 0;
   top: 50%;
@@ -402,37 +405,45 @@
   color: #888;
   height: 20px;
 }
-.woocommerce-MyAccount-courses-table .sort-icon:before {
+.woocommerce-MyAccount-courses-table .sort-icon:before,
+.woocommerce-MyAccount-certificates-table .sort-icon:before {
   position: absolute;
   top: 0;
   left: 0;
 }
-.woocommerce-MyAccount-courses-table .sort-icon:after {
+.woocommerce-MyAccount-courses-table .sort-icon:after,
+.woocommerce-MyAccount-certificates-table .sort-icon:after {
   position: absolute;
   bottom: 0;
   left: 0;
 }
-.woocommerce-MyAccount-courses-table .woocerti-sort-both:before {
+.woocommerce-MyAccount-courses-table .woocerti-sort-both:before,
+.woocommerce-MyAccount-certificates-table .woocerti-sort-both:before {
   content: "▲";
   opacity: 0.3;
 }
-.woocommerce-MyAccount-courses-table .woocerti-sort-both:after {
+.woocommerce-MyAccount-courses-table .woocerti-sort-both:after,
+.woocommerce-MyAccount-certificates-table .woocerti-sort-both:after {
   content: "▼";
   opacity: 0.3;
 }
-.woocommerce-MyAccount-courses-table .woocerti-sort-up:before {
+.woocommerce-MyAccount-courses-table .woocerti-sort-up:before,
+.woocommerce-MyAccount-certificates-table .woocerti-sort-up:before {
   content: "▲";
   color: var(--primary-color);
 }
-.woocommerce-MyAccount-courses-table .woocerti-sort-up:after {
+.woocommerce-MyAccount-courses-table .woocerti-sort-up:after,
+.woocommerce-MyAccount-certificates-table .woocerti-sort-up:after {
   content: "▼";
   opacity: 0.3;
 }
-.woocommerce-MyAccount-courses-table .woocerti-sort-down:before {
+.woocommerce-MyAccount-courses-table .woocerti-sort-down:before,
+.woocommerce-MyAccount-certificates-table .woocerti-sort-down:before {
   content: "▲";
   opacity: 0.3;
 }
-.woocommerce-MyAccount-courses-table .woocerti-sort-down:after {
+.woocommerce-MyAccount-courses-table .woocerti-sort-down:after,
+.woocommerce-MyAccount-certificates-table .woocerti-sort-down:after {
   content: "▼";
   color: var(--primary-color);
 }/*# sourceMappingURL=style.css.map */
