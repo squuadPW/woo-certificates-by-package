@@ -1,6 +1,12 @@
 <div class="woocerti-issue-header">
     <h2><?php echo __('Issue Certificates for: ', 'woocertificatespackage').esc_html($course_name); ?></h2>
 </div>
+<?php
+    $issue_certificate_url = wc_get_account_endpoint_url('issue-certificate');
+    $base_url = wc_get_account_endpoint_url('issue-certificate');
+    $unencoded_url = add_query_arg(array('mode' => $_GET['mode'], 'course_id' => $course_id), $base_url);
+    $return_url = urlencode($unencoded_url);
+?>
 
 <div class="woocerti-issue-options">
     <?php if (isset($_GET['mode']) && $_GET['mode'] === 'single') : ?>
@@ -65,6 +71,10 @@
                 </p>
                 <p class="p-buttons">
                     <button type="submit" class="woocommerce-button button button-primary btn-course woocerti-issue-submit"><?php echo __('Issue Certificate', 'woocertificatespackage'); ?></button>
+                    <a class="woocommerce-button button btn-course"
+                        href="<?php echo esc_url(add_query_arg(array('action' => 'list_issued', 'course_id' => $course_id, 'return_url' => $return_url), $issue_certificate_url)); ?>">
+                        <?php echo __('View Issued Certificates', 'woocertificatespackage'); ?>
+                    </a>
                 </p>
             </form>
         </div>
@@ -153,6 +163,10 @@
                     <button type="submit" class="woocommerce-button button button-primary btn-course woocerti-issue-submit">
                         <?php echo __('Upload and Issue', 'woocertificatespackage'); ?>
                     </button>
+                    <a class="woocommerce-button button btn-course"
+                        href="<?php echo esc_url(add_query_arg(array('action' => 'list_issued', 'course_id' => $course_id, 'return_url' => $return_url), $issue_certificate_url)); ?>">
+                        <?php echo __('View Issued Certificates', 'woocertificatespackage'); ?>
+                    </a>
                 </p>
             </form>
             <?php

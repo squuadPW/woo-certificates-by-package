@@ -104,6 +104,10 @@
     margin-right: 0;
   }
 }
+#woocerti-response-message {
+  margin-top: 1em;
+}
+
 .error-message {
   color: #e2401c;
 }

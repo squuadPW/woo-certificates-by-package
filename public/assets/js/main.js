@@ -252,22 +252,41 @@ jQuery(document).ready(function($) {
     const phoneInput = document.querySelector("#phone_number");
     let iti = null;
 
-    // Displays a message on the interface
-    const showMessage = (messages, type = 'error') => {
-        responseMessageContainer.html('');
-        const ul = $('<ul></ul>').addClass(`woocerti-${type}-messages`);
-        messages.forEach(msg => {
-            ul.append(`<li class="${type}-message">${msg}</li>`);
-        });
+    /**
+     * Función para mostrar mensajes de WooCommerce (éxito/error/info) vía AJAX.
+     * @param {Array} messages - Un array de strings con los mensajes a mostrar.
+     * @param {string} type - 'success', 'error', o 'notice'.
+     */
+    function showMessageIsuue(messages, type) {
+        const $container = $('#woocerti-response-message');
+        $container.empty()
+            .removeClass('woocommerce-message woocommerce-error woocommerce-info')
+            .hide();
 
-        responseMessageContainer.append(ul).fadeIn();
-    };
+        if (!messages || messages.length === 0) {
+            return;
+        }
 
-    // Function to show a single message
-    function showMessageSingle(message, type = 'success') {
-        const messageDiv = $('#woocerti-response-message');
-        messageDiv.removeClass('woocommerce-message woocommerce-error').addClass(`woocommerce-${type}`);
-        messageDiv.html(message).show();
+        let htmlContent = '';
+
+        if (type === 'success') {
+            $container.addClass('woocommerce-message');
+            htmlContent = `<p>${messages.join('</p><p>')}</p>`;
+        } else if (type === 'error') {
+            $container.addClass('woocommerce-error');
+            htmlContent = `<ul class="woocommerce-error-list">
+                            <li>${messages.join('</li><li>')}</li>
+                        </ul>`;
+        } else if (type === 'notice') {
+            $container.addClass('woocommerce-info');
+            htmlContent = `<p>${messages.join('</p><p>')}</p>`;
+        }
+
+        $container.html(htmlContent).slideDown(300);
+
+        $('html, body').animate({
+            scrollTop: $container.offset().top - 100
+        }, 500);
     }
 
     if (issueForm.length) {
@@ -446,7 +465,7 @@ jQuery(document).ready(function($) {
             if (documentType !== 'identification_document') {
                 $('#single_student_inssued_in').val('US').attr('required', false);
             } else {
-                 $('#single_student_inssued_in').attr('required', true);
+                $('#single_student_inssued_in').attr('required', true);
             }
 
             // Validate all required fields
@@ -482,27 +501,11 @@ jQuery(document).ready(function($) {
                 submitButton.prop('disabled', false).text(woocerti_data.text_forms.btn_submit_issue_certificate);
 
                 if (resp.success) {
-                    const issueCertificateBaseUrl = woocerti_data.endpoints.issue_certificate_page;
                     issueForm.trigger('reset');
-                    const courseId = issueForm.find('input[name="course_id"]').val();
-                    const currentUrl = window.location.href;
-                    const viewCertificatesUrl = new URL(issueCertificateBaseUrl);
-                    viewCertificatesUrl.searchParams.append('course_id', courseId);
-                    viewCertificatesUrl.searchParams.append('action', 'list_issued');
-                    viewCertificatesUrl.searchParams.append('return_url', currentUrl);
-
-                    const successMessageHtml = `
-                        <p class="success-message">${resp.data.message}</p>
-                        <p class="p-buttons">
-                            <a href="${viewCertificatesUrl.href}" class="woocommerce-button button btn-course">
-                                ${woocerti_data.text_forms.btn_view_issued_certificates}
-                            </a>
-                        </p>
-                    `;
-                    showMessageSingle(successMessageHtml, 'success');
+                    showMessageIsuue([resp.data.message], 'success');
                 } else {
                     if (resp.data && resp.data.messages) {
-                        showMessage(resp.data.messages, 'error');
+                        showMessageIsuue([resp.data.messages], 'error');
                     }
                     if (resp.data && resp.data.validations) {
                         Object.entries(resp.data.validations).forEach(([key, value]) => {
@@ -513,7 +516,7 @@ jQuery(document).ready(function($) {
                 }
             }).fail(function() {
                 submitButton.prop('disabled', false).text(woocerti_data.text_forms.btn_submit_issue_certificate);
-                showMessage([woocerti_data.messages.ajax_error]);
+                showMessageIsuue([woocerti_data.messages.ajax_error], 'error');
             });
         });
     }
@@ -639,24 +642,8 @@ jQuery(document).ready(function($) {
         try {
             const results = JSON.parse(bulkResultsContainer.attr('data-results'));
             if (results.general_messages && results.general_messages.length > 0) {
-                const issueCertificateBaseUrl = woocerti_data.endpoints.issue_certificate_page;
-                const courseId = bulkUploadForm.find('input[name="course_id"]').val();
-                const currentUrl = window.location.href;
-                const viewCertificatesUrl = new URL(issueCertificateBaseUrl);
-                viewCertificatesUrl.searchParams.append('course_id', courseId);
-                viewCertificatesUrl.searchParams.append('action', 'list_issued');
-                viewCertificatesUrl.searchParams.append('return_url', currentUrl);
-
-                const successMessageHtml = `
-                    <p class="success-message">${results.general_messages}</p>
-                    <p class="p-buttons">
-                        <a href="${viewCertificatesUrl.href}" class="woocommerce-button button btn-course">
-                            ${woocerti_data.text_forms.btn_view_issued_certificates}
-                        </a>
-                    </p>
-                `;
                 const messageType = results.success ? 'success' : 'error';
-                showMessageSingle(successMessageHtml, messageType);
+                showMessageIsuue([results.general_messages], messageType);
             }
 
             if (results.detailed_results && results.detailed_results.length > 0) {
@@ -726,7 +713,7 @@ jQuery(document).ready(function($) {
                 });
             }
         } catch (error) {
-            showMessage([woocerti_data.messages.bulk_results_error], 'error');
+            showMessageIsuue([woocerti_data.messages.bulk_results_error], 'error');
         }
     }
 
