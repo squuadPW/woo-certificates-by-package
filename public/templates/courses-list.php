@@ -34,6 +34,8 @@
 
     $course_name_sort = woocerti_get_sort_link($endpoint_url, 'course_name', $current_orderby, $current_order);
     $status_sort = woocerti_get_sort_link($endpoint_url, 'status', $current_orderby, $current_order);
+    $delete_nonce = wp_create_nonce('delete_course');
+    $clean_redirect_url = esc_url(wc_get_account_endpoint_url('courses'));
 ?>
 <?php if (empty($courses) && $current_page == 1) : ?>
     <p><?php echo __('You have not created any courses yet.', 'woocertificatespackage'); ?></p>
@@ -127,7 +129,11 @@
                     <td class="woocommerce-MyAccount-courses-table__cell woocommerce-MyAccount-courses-table__cell--actions" data-title="<?php echo esc_attr(__('Actions', 'woocertificatespackage')); ?>">
                         <?php if ($course->status === 'Draft') : ?>
                             <a href="<?php echo esc_url($endpoint_url.'?action=edit&course_id='.$course->id_course); ?>" class="woocommerce-button button woocerti-edit-button"><?php echo __('Edit', 'woocertificatespackage'); ?></a>
-                            <a href="<?php echo esc_url(wp_nonce_url($endpoint_url.'?action=delete&course_id='.$course->id_course, 'delete_course')); ?>" class="woocommerce-button button woocerti-delete-button"><?php echo __('Delete', 'woocertificatespackage'); ?></a>
+                            <a href="<?php echo esc_url(wp_nonce_url($endpoint_url.'?action=delete&course_id='.$course->id_course, 'delete_course')); ?>"
+                                data-course-id="<?php echo esc_attr($course->id_course); ?>"
+                                data-nonce="<?php echo esc_attr($delete_nonce); ?>"
+                                data-redirect-url="<?php echo $clean_redirect_url; ?>"
+                                class="woocommerce-button button woocerti-delete-button woocerti-delete-ajax-trigger"><?php echo __('Delete', 'woocertificatespackage'); ?></a>
                         <?php elseif ($course->status === 'Approved') : ?>
                             <a href="<?php echo esc_url($endpoint_url.'?action=buy&course_id='.$course->id_course); ?>" class="woocommerce-button button woocerti-buy-button"><?php echo __('Buy Certificates', 'woocertificatespackage'); ?></a>
                         <?php endif; ?>

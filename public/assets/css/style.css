@@ -109,7 +109,7 @@
 }
 
 .error-message {
-  color: #e2401c;
+  color: var(--secondary-color);
 }
 
 .success-message {
@@ -127,7 +127,7 @@
   display: block;
   margin-top: 0.5em;
   font-size: 0.9em;
-  color: #e2401c;
+  color: var(--secondary-color);
   font-weight: 500;
   visibility: hidden;
 }
@@ -137,8 +137,8 @@
 
 /* Style for input when it has an error */
 .woocommerce-MyAccount-content form .input-error {
-  border-color: #e2401c !important;
-  box-shadow: inset 0 1px 1px #e2401c !important;
+  border-color: var(--secondary-color) !important;
+  box-shadow: inset 0 1px 1px var(--secondary-color) !important;
 }
 .woocommerce-MyAccount-content form .validation-message {
   visibility: visible;
@@ -224,7 +224,7 @@
 .woocerti-toggle-details {
   cursor: pointer;
   margin-left: 5px;
-  color: #e2401c;
+  color: var(--secondary-color);
 }
 
 .woocerti-error-details {
@@ -237,7 +237,7 @@
 
 .error-detail-content {
   padding: 10px 15px;
-  border-left: 3px solid #e2401c;
+  border-left: 3px solid var(--secondary-color);
 }
 
 .p-buttons .button {
@@ -450,4 +450,88 @@
 .woocommerce-MyAccount-certificates-table .woocerti-sort-down:after {
   content: "▼";
   color: var(--primary-color);
+}
+
+.modal-woorceti {
+  z-index: 10000;
+  position: fixed;
+  z-index: 11000;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 20px;
+  box-sizing: border-box;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+.modal-woorceti .modal-content {
+  background-color: #fff;
+  margin: 50px auto 150px auto;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  width: 50%;
+  overflow: auto;
+  padding: 0 !important;
+}
+.modal-woorceti .modal-content .modal-header {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-woorceti .modal-content .modal-header h3 {
+  font-weight: 600;
+  font-size: 20px;
+  margin: 0;
+}
+.modal-woorceti .modal-content .modal-header .modal-close-woorceti {
+  cursor: pointer !important;
+  font-size: 18px;
+  margin-left: 10px;
+}
+.modal-woorceti .modal-content .modal-header .disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.modal-woorceti .modal-content .modal-body {
+  padding: 20px;
+}
+.modal-woorceti .modal-content .modal-body .content {
+  margin-bottom: 10px;
+}
+.modal-woorceti .modal-content .modal-body .content p {
+  font-size: 16px;
+  text-align: center;
+}
+.modal-woorceti .modal-content .modal-body .content-footer {
+  text-align: center;
+  margin-top: 2rem;
+}
+.modal-woorceti .modal-content .modal-body .content-footer .button-danger {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+.modal-woorceti .modal-content .modal-body .content-footer .button-cancel {
+  margin: 0;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  width: initial;
+  padding: 5px 20px !important;
+  text-align: center;
+  border-radius: 20px;
+  margin-left: 10px;
+  background-color: #f1f1f1 !important;
+  border: 1px solid #ccc;
+  color: #333 !important;
+}
+@media screen and (max-width: 767px) {
+  .modal-woorceti .modal-content {
+    width: 100% !important;
+    border-radius: 15px !important;
+    margin: 0;
+  }
 }/*# sourceMappingURL=style.css.map */

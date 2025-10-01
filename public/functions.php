@@ -29,6 +29,8 @@ class Woocerti_Public {
         add_action('wp_ajax_woocerti_issue_single_certificate', array($this, 'handle_ajax_issue_certificate'));
         add_action('wp_ajax_nopriv_woocerti_issue_single_certificate', array($this, 'handle_ajax_issue_certificate'));
         add_action('wp_ajax_woocerti_add_to_cart_checkout', array($this, 'woocerti_add_to_cart_checkout'));
+        // Handle AJAX request for single certificate form
+        add_action('wp_ajax_woocerti_delete_course_ajax', array($this, 'handle_ajax_delete_course'));
         // Register custom endpoints.
         add_action('init', array($this, 'add_plugin_endpoints'));
         // Add custom query variables to handle pagination.
@@ -45,8 +47,27 @@ class Woocerti_Public {
         add_filter('woocommerce_cart_item_name', array($this, 'display_course_name_in_cart'), 10, 2);
         // Generates a personalized notification, right after a product has been added to the cart.
         add_filter('wc_add_to_cart_message_html', array($this, 'add_custom_add_to_cart_notice'), 10, 2);
+        add_action('wp', array($this, 'load_modals'));
         // Correctly locates the template file, allowing a theme to override it.
         add_filter('woocommerce_locate_template', array($this, 'woocerti_locate_template'), 10, 3);
+    }
+
+    public function load_modals() {
+        if (!is_account_page() || !is_user_logged_in()) {
+            return;
+        }
+
+        add_action('wp_footer', array($this, 'woorceti_show_modal_custom'));
+    }
+
+    public function woorceti_show_modal_custom() {
+        // Include the template file.
+        $template_file = WOOCERTI_PLUGIN_DIR.'public/templates/modal.php';
+        if (file_exists($template_file)) {
+            include $template_file;
+        } else {
+            echo '<p>'.__('The modal template file was not found.', 'woocertificatespackage').'</p>';
+        }
     }
 
     /**
@@ -424,6 +445,9 @@ class Woocerti_Public {
         }
 
         switch ($action) {
+            // case 'delete':
+            //     $this->render_delete_course();
+            //     break;
             case 'create':
             case 'edit':
                 $this->render_course_form($course_id, isset($course) ? $course : null);
@@ -437,6 +461,119 @@ class Woocerti_Public {
                 break;
         }
     }
+
+    /**
+     * Elimina el registro del curso de la base de datos.
+     *
+     * @param int $course_id ID del curso a eliminar.
+     * @return bool True si la eliminación fue exitosa, false en caso contrario.
+     */
+    private function delete_course_record($course_id) {
+        global $wpdb;
+        $current_user_id = get_current_user_id();
+        $table_name = $wpdb->prefix.'courses';
+        $course_id = absint($course_id);
+
+        if ($course_id > 0) {
+            $result = $wpdb->delete(
+                $table_name,
+                array('id_course' => $course_id, 'id_user' => $current_user_id),
+                array('%d', '%d')
+            );
+
+            return $result !== false && $result > 0;
+        }
+
+        return false;
+    }
+
+    /**
+     * Maneja la eliminación del curso a través de AJAX.
+     * Devuelve la URL de redirección limpia para que JS la use.
+     */
+    public function handle_ajax_delete_course() {
+        if (!isset($_POST['course_id']) || !isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'delete_course')) {
+            wp_send_json_error(array(
+                'message' => __('Invalid security token or missing data.', 'woocertificatespackage'),
+            ));
+            wp_die();
+        }
+
+        $course_id = absint($_POST['course_id']);
+        if ($this->delete_course_record($course_id)) {
+            wc_add_notice(__('Course draft successfully deleted.', 'woocertificatespackage'), 'success');
+
+            $redirect_url = wc_get_account_endpoint_url('courses');
+            $final_clean_url = strtok($redirect_url, '?');
+
+            wp_send_json_success(array(
+                'redirect_url' => $final_clean_url,
+            ));
+        } else {
+            wc_add_notice(__('Error: Could not delete the course record.', 'woocertificatespackage'), 'error');
+            wp_send_json_error(array(
+                'message' => __('Error: Could not delete the course record.', 'woocertificatespackage'),
+            ));
+        }
+
+        wp_die();
+    }
+
+    // private function render_delete_course() {
+    //     // Handle delete action
+    //     if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['course_id']) && isset($_GET['_wpnonce'])) {
+    //         global $wpdb;
+    //         $table_name = $wpdb->prefix.'courses';
+    //         $user_id = get_current_user_id();
+
+    //         if (wp_verify_nonce(sanitize_text_field($_GET['_wpnonce']), 'delete_course')) {
+    //             $course_id = intval($_GET['course_id']);
+    //             if ($course_id > 0) {
+    //                 $current_status = $wpdb->get_var($wpdb->prepare("SELECT status FROM `{$table_name}` WHERE id_course = %d AND id_user = %d", $course_id, $user_id));
+
+    //                 if ($current_status !== 'Draft') {
+    //                     wc_add_notice(__('You can only delete courses with the status "Draft"', 'woocertificatespackage'), 'error');
+    //                 } else {
+    //                     $wpdb->delete(
+    //                         $table_name,
+    //                         array(
+    //                             'id_course' => $course_id,
+    //                             'id_user' => $user_id
+    //                         )
+    //                     );
+    //                     wc_add_notice(__('Course draft successfully deleted.', 'woocertificatespackage'), 'success');
+    //                 }
+
+    //                 // 1. Calcular la URL de destino limpia (sin ningún '?')
+    //                 $redirect_url = wc_get_account_endpoint_url('courses');
+    //                 $final_clean_url = strtok($redirect_url, '?');
+
+    //                 // 2. **Paso Crucial A:** Limpiar la variable global $_GET.
+    //                 // Esto previene que WordPress o WooCommerce la usen para reconstruir la URI.
+    //                 unset($_GET['action']);
+    //                 unset($_GET['course_id']);
+    //                 unset($_GET['_wpnonce']);
+                    
+    //                 // 3. **Paso Crucial B:** Limpiar la URI del servidor.
+    //                 // Esto obliga a WordPress a no usar la URL original para generar filtros o mensajes.
+    //                 if (isset($_SERVER['REQUEST_URI'])) {
+    //                     // Eliminar los parámetros de la URI actual del servidor
+    //                     $clean_uri = remove_query_arg(array('action', 'course_id', '_wpnonce'), $_SERVER['REQUEST_URI']);
+    //                     $_SERVER['REQUEST_URI'] = $clean_uri;
+    //                 }
+
+    //                 // 4. Forzar la redirección final al destino limpio.
+    //                 // Utilizamos wp_redirect() para la compatibilidad con WordPress/WooCommerce,
+    //                 // pero con un contexto global totalmente limpio.
+    //                 wp_redirect($final_clean_url);
+    //                 exit;
+
+    //                 // wp_safe_redirect(wc_get_account_endpoint_url('courses'));
+    //                 // exit;
+    //             }
+    //         }
+    //     }
+    // }
 
     /**
      * Renders the list of courses for the current user.
@@ -634,32 +771,6 @@ class Woocerti_Public {
                 $user_initials .= strtoupper(substr($name, 0, 1));
             }
             $user_initials .= $user_id;
-        }
-
-        // Handle delete action
-        if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['course_id']) && isset($_GET['_wpnonce'])) {
-            if (wp_verify_nonce(sanitize_text_field($_GET['_wpnonce']), 'delete_course')) {
-                $course_id = intval($_GET['course_id']);
-                if ($course_id > 0) {
-                    $current_status = $wpdb->get_var($wpdb->prepare("SELECT status FROM `{$table_name}` WHERE id_course = %d AND id_user = %d", $course_id, $user_id));
-
-                    if ($current_status !== 'Draft') {
-                        wc_add_notice(__('You can only delete courses with the status "Draft"', 'woocertificatespackage'), 'error');
-                    } else {
-                        $wpdb->delete(
-                            $table_name,
-                            array(
-                                'id_course' => $course_id,
-                                'id_user' => $user_id
-                            )
-                        );
-                        wc_add_notice(__('Course draft successfully deleted.', 'woocertificatespackage'));
-                    }
-                    // Redirect to avoid resubmission
-                    wp_safe_redirect(wc_get_account_endpoint_url('courses'));
-                    exit;
-                }
-            }
         }
 
         // Handle save (create/update) action
@@ -1042,9 +1153,7 @@ class Woocerti_Public {
             ));
             $course_name = $course_record ? $course_record->course_name : '';
 
-            // $issued_count = $certificate_summary['purchased'] - $certificate_summary['available'];
             $certificate_summary['issued_count'] = $certificate_summary['purchased'] - $certificate_summary['available'];
-            // var_dump($certificate_summary);
 
             wc_get_template(
                 'issued-certificates-list.php',

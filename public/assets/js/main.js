@@ -192,12 +192,81 @@ jQuery(document).ready(function($) {
         $(this).closest('.form-row-field').removeClass('focus');
     });
 
-    // Handle course deletion confirmation
-    $('.woocommerce-MyAccount-courses-table').on('click', '.woocerti-delete-button', function(e) {
-        if (!confirm(woocerti_data.deleteConfirmText)) {
-            e.preventDefault();
-        }
+    let courseToDeleteData = {};
+    const deleteModal = $('#modal-woorceti-confirm-delete-course');
+    const confirmDeleteBtn = $('#woorceti-confirm-delete-course');
+    const redirectUrl = deleteModal.find('.content-footer a').data('redirect-url');
+
+    $('.woocerti-delete-ajax-trigger').on('click', function(e) {
+        e.preventDefault();
+        courseToDeleteData.id = $(this).data('course-id');
+        courseToDeleteData.nonce = $(this).data('nonce');
+        courseToDeleteData.redirectUrl = $(this).data('redirect-url');
+        confirmDeleteBtn.attr('href', '#'); // Evitar navegación predeterminada
+        deleteModal.show();
     });
+
+    confirmDeleteBtn.on('click', function(e) {
+        e.preventDefault();
+
+        if (!courseToDeleteData.id || !courseToDeleteData.nonce) {
+            alert('Error: Missing course data for deletion.');
+            return;
+        }
+
+        deleteModal.hide();
+
+        // Llamada AJAX al nuevo endpoint
+        $.ajax({
+            type: 'POST',
+            url: woocerti_data.ajax_url,
+            data: {
+                action: 'woocerti_delete_course_ajax',
+                course_id: courseToDeleteData.id,
+                nonce: courseToDeleteData.nonce
+            },
+            success: function(response) {
+                if (response.success && response.data.redirect_url) {
+                    window.location.href = response.data.redirect_url;
+                } else {
+                    alert(response.data.message || 'Error deleting the course.');
+                    window.location.href = courseToDeleteData.redirectUrl;
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('An unknown server error occurred.');
+                window.location.href = courseToDeleteData.redirectUrl;
+            }
+        });
+    });
+
+    $('.modal-close-woorceti, #btn-cancel-woorceti-modal').on('click', function() {
+        deleteModal.hide();
+    });
+
+    // Global variable to store the course deletion URL
+    // let deleteCourseUrl = '';
+
+    // $('.woocommerce-MyAccount-courses-table').on('click', '.woocerti-delete-button', function(e) {
+    //     e.preventDefault();
+    //     deleteCourseUrl = $(this).attr('href');
+    //     $('#woorceti-confirm-delete-course').attr('href', deleteCourseUrl);
+    //     $('#modal-woorceti-confirm-delete-course').show();
+    // });
+
+    // $('body').on('click', '#btn-cancel-woorceti-modal', function(e) {
+    //     e.preventDefault();
+    //     $('#modal-woorceti-confirm-delete-course').hide();
+    //     deleteCourseUrl = '';
+    //     $('#woorceti-confirm-delete-course').attr('href', '#');
+    // });
+
+    // $('body').on('click', '.modal-close-woorceti', function(e) {
+    //     e.preventDefault();
+    //     $('#modal-woorceti-confirm-delete-course').hide();
+    //     deleteCourseUrl = '';
+    //     $('#woorceti-confirm-delete-course').attr('href', '#');
+    // });
 
     // Handles the button click to show/hide the dropdown
     $('.woocerti-dropdown .woocerti-issue-button').on('click', function(e) {
