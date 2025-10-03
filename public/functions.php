@@ -67,9 +67,11 @@ class Woocerti_Public {
         $allowed_mime_types = ['image/png'];
         $allowed_extensions = ['png'];
         $required_dimension = 512;
-
+        $user_id = get_current_user_id();
         $file_extension = pathinfo($file['name'], PATHINFO_EXTENSION);
         $file_extension = strtolower($file_extension);
+        $new_filename = 'logo_' . $user_id . '_' . str_replace(['.', ' '], '_', microtime()) . '.' . $file_extension;
+        $file['name'] = $new_filename;
 
         if (!in_array($file['type'], $allowed_mime_types) || !in_array($file_extension, $allowed_extensions)) {
             $file['error'] = __('Invalid file type. Only PNG images are allowed.', 'woocertificatespackage');
