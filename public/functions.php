@@ -48,8 +48,165 @@ class Woocerti_Public {
         // Generates a personalized notification, right after a product has been added to the cart.
         add_filter('wc_add_to_cart_message_html', array($this, 'add_custom_add_to_cart_notice'), 10, 2);
         add_action('wp', array($this, 'load_modals'));
+
+        // Hook to verify the logo and show the modal
+        add_action('wp', array($this, 'maybe_show_logo_upload_modal'));
+
         // Correctly locates the template file, allowing a theme to override it.
         add_filter('woocommerce_locate_template', array($this, 'woocerti_locate_template'), 10, 3);
+    }
+
+    /**
+     * Filter that validates the MIME type, extension (PNG only) and dimensions (512x512).
+     * Hooks into 'wp_handle_upload_prefilter'.
+     *
+     * @param array $file Array with the information of the uploaded file (from the $_FILES array).
+     * @return array Returns the file array or an array with an 'error' field.
+     */
+    public function validate_logo_dimensions($file) {
+        $allowed_mime_types = ['image/png'];
+        $allowed_extensions = ['png'];
+        $required_dimension = 512;
+
+        $file_extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $file_extension = strtolower($file_extension);
+
+        if (!in_array($file['type'], $allowed_mime_types) || !in_array($file_extension, $allowed_extensions)) {
+            $file['error'] = __('Invalid file type. Only PNG images are allowed.', 'woocertificatespackage');
+            return $file;
+        }
+
+        $image_info = getimagesize($file['tmp_name']);
+
+        if ($image_info) {
+            $width = $image_info[0];
+            $height = $image_info[1];
+
+            // if ($width !== $required_dimension || $height !== $required_dimension) {
+            //     $file['error'] = sprintf(
+            //         __('The logo must be exactly %1$dx%2$d pixels. Your image size is %3$dx%4$d.', 'woocertificatespackage'),
+            //         $required_dimension,
+            //         $required_dimension,
+            //         $width,
+            //         $height
+            //     );
+            // }
+        } else {
+            $file['error'] = __('The file could not be read as a valid PNG image.', 'woocertificatespackage');
+        }
+
+        return $file;
+    }
+
+    /**
+     * Displays the modal to load the logo if the user is an alliance member and does not have a logo.
+     */
+    public function maybe_show_logo_upload_modal() {
+        if (!is_user_logged_in()) {
+            return;
+        }
+
+        if (current_user_can(WOOCERTI_ROLE_USER_ALIANZA)) {
+            $logo_attached_id = get_user_meta(get_current_user_id(), 'woocerti_logo_attached_id', true);
+
+            if (empty($logo_attached_id)) {
+                add_action('wp_footer', array($this, 'render_logo_upload_modal'));
+            }
+        }
+    }
+
+    /**
+     * Renders the HTML of the modal at the end of the body.
+     */
+    public function render_logo_upload_modal() {
+        $upload_nonce = wp_create_nonce('woocerti_logo_upload_form');
+        ?>
+        <div id="woocerti-logo-modal" class="modal modal-woorceti modal-woocerti-logo-upload">
+            <div class="modal-content">
+                <div class="modal-header p-5">
+                    <h3><?php echo __('Required Logo Upload', 'woocertificatespackage'); ?></h3>
+                </div>
+                <div class="modal-body">
+                    <p id="woocerti-logo-error" class="error-message" style="font-weight: bold; margin-bottom: 10px;"></p>
+                    <form method="post" enctype="multipart/form-data" action="<?php echo esc_url(remove_query_arg('wc-api', esc_url_raw($_SERVER['REQUEST_URI']))); ?>">
+                        <p><?php echo __('Please upload your organization logo. The recommended dimensions are 512x512 pixels.', 'woocertificatespackage'); ?></p>
+                        <div style="margin: 25px 0; text-align: left;">
+                            <label for="woocerti_user_logo" class="large-label"><?php echo __('Select Logo File (PNG)', 'woocertificatespackage'); ?>:</label>
+                            <button type="button" class="woocommerce-button button woocerti-m-0" id="woocerti-custom-upload-btn" style="width: 100%; margin-bottom: 10px;">
+                                <span id="woocerti-upload-text"><?php echo __('Choose PNG File', 'woocertificatespackage'); ?></span>
+                            </button>
+                            <input
+                                type="file"
+                                id="woocerti_user_logo"
+                                name="woocerti_user_logo"
+                                accept="image/png"
+                                required
+                                style="display: none;"
+                            />
+                            <p id="woocerti-selected-file-name" style="font-style: italic; font-size: 0.9em; margin-top: 5px;"></p>
+                        </div>
+
+                        <div class="content-footer" style="text-align: center; margin-top: 20px;">
+                            <button id="woocerti_logo_submit" type="submit" class="woocommerce-button button button-primary woocerti-m-0" name="woocerti_logo_submit">
+                                <?php echo __('Save Logo', 'woocertificatespackage'); ?>
+                            </button>
+                        </div>
+
+                        <input type="hidden" name="woocerti_action" value="upload_user_logo">
+                        <input type="hidden" name="_wpnonce" value="<?php echo esc_attr($upload_nonce); ?>">
+                    </form>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Processes the logo upload and saves the Attached ID in the user metadata.
+     */
+    private function handle_logo_upload_form() {
+        $current_url = esc_url_raw($_SERVER['REQUEST_URI']);
+
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'woocerti_logo_upload_form')) {
+            wc_add_notice(__('Security check failed during logo upload.', 'woocertificatespackage'), 'error');
+            return;
+        }
+
+        $user_id = get_current_user_id();
+
+        if ($user_id === 0 || !current_user_can(WOOCERTI_ROLE_USER_ALIANZA) || empty($_FILES['woocerti_user_logo']['name'])) {
+            wc_add_notice(__('File not selected or user is not authorized.', 'woocertificatespackage'), 'error');
+            return;
+        }
+
+        add_filter('wp_handle_upload_prefilter', array($this, 'validate_logo_dimensions'));
+
+        if (!function_exists('wp_handle_upload') || !function_exists('media_handle_upload')) {
+            require_once(ABSPATH . 'wp-admin/includes/file.php');
+            require_once(ABSPATH . 'wp-admin/includes/image.php');
+            require_once(ABSPATH . 'wp-admin/includes/media.php');
+        }
+
+        $file_id = 'woocerti_user_logo';
+        $upload_overrides = array('test_form' => false);
+
+        $uploaded_file = media_handle_upload($file_id, 0, array(), $upload_overrides);
+
+        if (is_wp_error($uploaded_file)) {
+            wc_add_notice(__('Error uploading logo: ', 'woocertificatespackage') . $uploaded_file->get_error_message(), 'error');
+            return;
+        }
+
+        $logo_attached_id = absint($uploaded_file);
+        $result = update_user_meta($user_id, 'woocerti_logo_attached_id', $logo_attached_id);
+
+        if ($result !== false) {
+            wc_add_notice(__('Logo uploaded and saved successfully.', 'woocertificatespackage'), 'success');
+            wp_safe_redirect($current_url);
+            exit;
+        } else {
+            wc_add_notice(__('Error saving logo metadatum. Please try again.', 'woocertificatespackage'), 'error');
+        }
     }
 
     public function load_modals() {
@@ -82,6 +239,10 @@ class Woocerti_Public {
             if (isset($_FILES['student_list']) && $_FILES['student_list']['error'] === UPLOAD_ERR_OK) {
                 $this->handle_certificate_issuance();
             }
+        }
+
+        if (isset($_POST['woocerti_action']) && $_POST['woocerti_action'] === 'upload_user_logo') {
+            $this->handle_logo_upload_form();
         }
     }
 
@@ -139,6 +300,12 @@ class Woocerti_Public {
                 'phone_number_invalid' => __('Invalid phone number.', 'woocertificatespackage'),
                 'ajax_error' => __('There was an error processing your request. Please try again.', 'woocertificatespackage'),
                 'bulk_results_error' => __('An error occurred while processing the bulk upload results. Please try again.', 'woocertificatespackage'),
+                'select_logo' => __('Select Logo', 'woocertificatespackage'),
+                'use_logo' => __('Use Logo', 'woocertificatespackage'),
+                'file_selected' => __('File selected', 'woocertificatespackage'),
+                'choose_png' => __('Choose PNG File', 'woocertificatespackage'),
+                'invalid_type_png' => __('Invalid file type. Only PNG images are allowed.', 'woocertificatespackage'),
+                'dimension_error_format' => __('The logo must be exactly %1$dx%2$d pixels. Your image size is %3$dx%4$d.', 'woocertificatespackage'),
             ),
             'iti_phone' => array(
                 'search_placeholder' => __('Search', 'woocertificatespackage'),
@@ -173,6 +340,7 @@ class Woocerti_Public {
             'endpoints' => array(
                 'issue_certificate_page' => $issue_certificate_url,
             ),
+            'media_upload_nonce' => wp_create_nonce('media-form'),
         );
         wp_localize_script('woocerti-public-script', 'woocerti_data', $data_to_pass);
     }

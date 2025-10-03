@@ -122,6 +122,10 @@
   margin-left: 0 !important;
 }
 
+.woocerti-m-0 {
+  margin: 0 !important;
+}
+
 /* Styles for client-side validation */
 .woocommerce-MyAccount-content form .validation-message {
   display: block;
@@ -534,4 +538,34 @@
     border-radius: 15px !important;
     margin: 0;
   }
+}
+
+.modal-woocerti-logo-upload {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  overflow: auto;
+}
+.modal-woocerti-logo-upload .modal-content {
+  max-width: 500px;
+  margin: 10vh auto;
+  background: white;
+  padding: 25px;
+  border-radius: 5px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+.modal-woocerti-logo-upload .modal-content .modal-header {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+.modal-woocerti-logo-upload .modal-content .modal-header h3 {
+  margin: 0;
+}
+.modal-woocerti-logo-upload .modal-content .modal-body {
+  padding-top: 20px;
 }/*# sourceMappingURL=style.css.map */

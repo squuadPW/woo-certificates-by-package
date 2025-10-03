@@ -846,4 +846,88 @@ jQuery(document).ready(function($) {
         updatePriceTotal();
     }
 
+    /**
+     * Simulates the behavior of PHP sprintf() to replace positional placeholders (%1$d, %2$s).
+     */
+    function sprintf(format, ...args) {
+        return format.replace(/%(\d+\$)?(d|s|x)/g, function (match, index, type) {
+            if (index) {
+                const position = parseInt(index.substring(0, index.length - 1)) - 1;
+                return typeof args[position] != 'undefined' ? args[position] : match;
+            } else {
+                return match;
+            }
+        });
+    }
+
+    const $customUploadBtn = $('#woocerti-custom-upload-btn');
+    const $fileInput = $('#woocerti_user_logo');
+    const $fileNameDisplay = $('#woocerti-selected-file-name');
+    const $uploadText = $('#woocerti-upload-text');
+    const $saveLogoBtn = $('#woocerti_logo_submit');
+    const $errorDisplay = $('#woocerti-logo-error');
+
+    if ($fileInput.length) {
+        $customUploadBtn.on('click', function(e) {
+            e.preventDefault();
+            $fileInput.trigger('click');
+        });
+
+        $fileInput.on('change', function() {
+            const files = this.files;
+            const requiredDimension = 512;
+            const allowedMimeType = 'image/png';
+            $errorDisplay.text('');
+
+            $fileNameDisplay.text('');
+            $uploadText.text(woocerti_data.messages.choose_png);
+            $saveLogoBtn.prop('disabled', true);
+
+            if (files.length === 0) {
+                return;
+            }
+
+            const file = files[0];
+
+            if (file.type !== allowedMimeType) {
+                $errorDisplay.text(woocerti_data.messages.invalid_type_png);
+                $(this).val('');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const width = this.width;
+                    const height = this.height;
+
+                    // if (width !== requiredDimension || height !== requiredDimension) {
+                    //     const errorMessage = sprintf(
+                    //         woocerti_data.messages.dimension_error_format,
+                    //         requiredDimension,
+                    //         requiredDimension,
+                    //         width,
+                    //         height
+                    //     );
+                    //     $errorDisplay.text(errorMessage);
+                    //     $fileInput.val('');
+                    //     $saveLogoBtn.prop('disabled', true);
+                    //     $fileNameDisplay.text('');
+                    //     $uploadText.text(woocerti_data.messages.choose_png);
+                    // } else {
+                        $errorDisplay.text('');
+                        $fileNameDisplay.text(file.name);
+                        $uploadText.text(woocerti_data.messages.file_selected);
+                        $saveLogoBtn.prop('disabled', false);
+                    // }
+                };
+                img.src = e.target.result;
+            };
+
+            reader.readAsDataURL(file);
+        });
+
+    }
+
 });
