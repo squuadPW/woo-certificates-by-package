@@ -831,7 +831,8 @@ jQuery(document).ready(function($) {
                 data: formData + '&action=woocerti_add_to_cart_checkout',
                 success: function(response) {
                     if (response.success) {
-                        window.location.href = checkoutUrl;
+                        window.location.href = response.data.redirect_url;
+                        // window.location.href = checkoutUrl;
                     } else {
                         console.error("AJAX Error Response: ", response);
                     }

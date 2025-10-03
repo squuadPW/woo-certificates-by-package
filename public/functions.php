@@ -1692,7 +1692,8 @@ class Woocerti_Public {
         if ($cart_item_key) {
             wp_send_json_success(array(
                 'message' => __('Product added to cart successfully.', 'woocertificatespackage'),
-                'cart_item_key' => $cart_item_key
+                'cart_item_key' => $cart_item_key,
+                'redirect_url' => esc_url(wc_get_checkout_url())
             ));
         } else {
             wp_send_json_error(array('message' => __('Error adding product to cart.', 'woocertificatespackage')));
