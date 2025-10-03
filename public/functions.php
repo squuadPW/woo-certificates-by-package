@@ -143,6 +143,12 @@ class Woocerti_Public {
                                 required
                                 style="display: none;"
                             />
+                            <div style="margin: 20px 0;">
+                                <div id="woocerti-logo-preview-container" style="text-align: center; margin-top: 15px; border: 1px dashed #ccc; padding: 10px; display: none;">
+                                    <img id="woocerti-logo-preview" src="#" alt="<?php echo __('Logo Preview', 'woocertificatespackage'); ?>" style="max-width: 150px; max-height: 150px; margin: auto; display: none;"/>
+                                    <p id="woocerti-preview-placeholder"><?php echo __('Preview will appear here.', 'woocertificatespackage'); ?></p>
+                                </div>
+                            </div>
                             <p id="woocerti-selected-file-name" style="font-style: italic; font-size: 0.9em; margin-top: 5px;"></p>
                         </div>
 

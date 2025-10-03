@@ -866,6 +866,9 @@ jQuery(document).ready(function($) {
     const $uploadText = $('#woocerti-upload-text');
     const $saveLogoBtn = $('#woocerti_logo_submit');
     const $errorDisplay = $('#woocerti-logo-error');
+    const $previewContainer = $('#woocerti-logo-preview-container');
+    const $previewImg = $('#woocerti-logo-preview');
+    const $previewPlaceholder = $('#woocerti-preview-placeholder');
 
     if ($fileInput.length) {
         $customUploadBtn.on('click', function(e) {
@@ -882,6 +885,9 @@ jQuery(document).ready(function($) {
             $fileNameDisplay.text('');
             $uploadText.text(woocerti_data.messages.choose_png);
             $saveLogoBtn.prop('disabled', true);
+            $previewImg.attr('src', '#').hide();
+            $previewPlaceholder.show();
+            $previewContainer.hide();
 
             if (files.length === 0) {
                 return;
@@ -895,9 +901,13 @@ jQuery(document).ready(function($) {
                 return;
             }
 
+            $previewContainer.show();
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
+                $previewImg.attr('src', e.target.result).show();
+                $previewPlaceholder.hide();
                 img.onload = function() {
                     const width = this.width;
                     const height = this.height;
