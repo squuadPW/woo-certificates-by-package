@@ -792,7 +792,7 @@ jQuery(document).ready(function($) {
         const $totalDisplay = $('#woocerti_total');
         const unitPrice = parseFloat($('#single_unit_price').val());
         const checkoutUrl = woocerti_data.checkout_url;
-        console.log("checkoutUrl: ",checkoutUrl);
+        // console.log("checkoutUrl: ",checkoutUrl);
 
         // Function to update the total
         const updatePriceTotal = () => {
