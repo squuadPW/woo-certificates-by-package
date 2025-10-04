@@ -48,12 +48,45 @@ class Woocerti_Public {
         // Generates a personalized notification, right after a product has been added to the cart.
         add_filter('wc_add_to_cart_message_html', array($this, 'add_custom_add_to_cart_notice'), 10, 2);
         add_action('wp', array($this, 'load_modals'));
-
         // Hook to verify the logo and show the modal
         add_action('wp', array($this, 'maybe_show_logo_upload_modal'));
-
         // Correctly locates the template file, allowing a theme to override it.
         add_filter('woocommerce_locate_template', array($this, 'woocerti_locate_template'), 10, 3);
+        // Add the button to the thank you page
+        add_action('woocommerce_thankyou', array($this, 'add_go_to_certificates_button'), 10);
+    }
+
+    /**
+     * Add a "Go to Orders" button to the thank you page.
+     *
+     * @param int $order_id Order ID.
+     */
+    public function add_go_to_certificates_button($order_id) {
+        if (!$order_id) {
+            return;
+        }
+
+        $order = wc_get_order($order_id);
+        $has_certificate_product = false;
+
+        foreach ($order->get_items() as $item) {
+            $product_id = $item->get_product_id();
+            // Checks if the product exists and belongs to the defined category.
+            if (has_term(WOOCERTI_NAME_CATEGORY_DEFAULT, 'product_cat', $product_id)) {
+                $has_certificate_product = true;
+                break;
+            }
+        }
+
+        // Only display the button if the certificate was purchased AND the order is 'processing' or 'completed'.
+        if ($has_certificate_product && $order->is_paid()) {
+            $orders_url = wc_get_account_endpoint_url('orders');
+            echo '<p class="p-buttons" style="text-align: center;">';
+            echo '<a href="' . esc_url($orders_url) . '" class="woocommerce-button button button-primary woocerti-m-0" style="width: auto;">';
+            echo esc_html(__('Go to Orders', 'woocertificatespackage'));
+            echo '</a>';
+            echo '</p>';
+        }
     }
 
     /**
@@ -621,9 +654,6 @@ class Woocerti_Public {
         }
 
         switch ($action) {
-            // case 'delete':
-            //     $this->render_delete_course();
-            //     break;
             case 'create':
             case 'edit':
                 $this->render_course_form($course_id, isset($course) ? $course : null);
@@ -694,62 +724,6 @@ class Woocerti_Public {
 
         wp_die();
     }
-
-    // private function render_delete_course() {
-    //     // Handle delete action
-    //     if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['course_id']) && isset($_GET['_wpnonce'])) {
-    //         global $wpdb;
-    //         $table_name = $wpdb->prefix.'courses';
-    //         $user_id = get_current_user_id();
-
-    //         if (wp_verify_nonce(sanitize_text_field($_GET['_wpnonce']), 'delete_course')) {
-    //             $course_id = intval($_GET['course_id']);
-    //             if ($course_id > 0) {
-    //                 $current_status = $wpdb->get_var($wpdb->prepare("SELECT status FROM `{$table_name}` WHERE id_course = %d AND id_user = %d", $course_id, $user_id));
-
-    //                 if ($current_status !== 'Draft') {
-    //                     wc_add_notice(__('You can only delete courses with the status "Draft"', 'woocertificatespackage'), 'error');
-    //                 } else {
-    //                     $wpdb->delete(
-    //                         $table_name,
-    //                         array(
-    //                             'id_course' => $course_id,
-    //                             'id_user' => $user_id
-    //                         )
-    //                     );
-    //                     wc_add_notice(__('Course draft successfully deleted.', 'woocertificatespackage'), 'success');
-    //                 }
-
-    //                 // 1. Calcular la URL de destino limpia (sin ningún '?')
-    //                 $redirect_url = wc_get_account_endpoint_url('courses');
-    //                 $final_clean_url = strtok($redirect_url, '?');
-
-    //                 // 2. **Paso Crucial A:** Limpiar la variable global $_GET.
-    //                 // Esto previene que WordPress o WooCommerce la usen para reconstruir la URI.
-    //                 unset($_GET['action']);
-    //                 unset($_GET['course_id']);
-    //                 unset($_GET['_wpnonce']);
-                    
-    //                 // 3. **Paso Crucial B:** Limpiar la URI del servidor.
-    //                 // Esto obliga a WordPress a no usar la URL original para generar filtros o mensajes.
-    //                 if (isset($_SERVER['REQUEST_URI'])) {
-    //                     // Eliminar los parámetros de la URI actual del servidor
-    //                     $clean_uri = remove_query_arg(array('action', 'course_id', '_wpnonce'), $_SERVER['REQUEST_URI']);
-    //                     $_SERVER['REQUEST_URI'] = $clean_uri;
-    //                 }
-
-    //                 // 4. Forzar la redirección final al destino limpio.
-    //                 // Utilizamos wp_redirect() para la compatibilidad con WordPress/WooCommerce,
-    //                 // pero con un contexto global totalmente limpio.
-    //                 wp_redirect($final_clean_url);
-    //                 exit;
-
-    //                 // wp_safe_redirect(wc_get_account_endpoint_url('courses'));
-    //                 // exit;
-    //             }
-    //         }
-    //     }
-    // }
 
     /**
      * Renders the list of courses for the current user.
