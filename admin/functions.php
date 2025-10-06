@@ -381,7 +381,7 @@ class Woocerti_Activator {
         $charset_collate = $wpdb->get_charset_collate();
 
         // Define the SQL query to create the table Courses
-        $sql_courses = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}courses` (
+        $sql_courses = "CREATE TABLE `{$wpdb->prefix}courses` (
             `id_course` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             `id_user` BIGINT(20) UNSIGNED NOT NULL,
             `code` VARCHAR(255) NOT NULL,
@@ -396,10 +396,12 @@ class Woocerti_Activator {
             `certification_fee_type` VARCHAR(50) NOT NULL,
             `certification_fee_value` DECIMAL(10, 2) NOT NULL,
             `status` VARCHAR(50) NOT NULL DEFAULT 'Pending',
+            `template_id` BIGINT(20) UNSIGNED NULL,
             `date_created` DATETIME NOT NULL,
             `date_updated` DATETIME NOT NULL,
             PRIMARY KEY (`id_course`),
-            KEY `idx_id_user` (`id_user`)
+            KEY `idx_id_user` (`id_user`),
+            KEY `idx_template_id` (`template_id`)
         ) $charset_collate;";
 
         // Define the SQL query to create the table Certificates

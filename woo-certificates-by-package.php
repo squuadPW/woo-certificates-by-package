@@ -186,3 +186,36 @@ function generate_certificate_records($order_id, $old_status, $new_status, $orde
 }
 // Connect our function to the WooCommerce hook.
 add_action('woocommerce_order_status_changed', 'generate_certificate_records', 10, 4);
+
+/**
+ * Retrieves all participant information and the course template_id using a double JOIN.
+ * Allows other plugins to modify the output through a filter.
+ *
+ * @param int $record_id The ID of the record in the 'course_participants' join table.
+ * @return array|null The combined data (participant + template_id), or null if not found.
+ */
+function woocerti_get_course_and_participant_data(int $record_id = 0) {
+    global $wpdb;
+    $junction_table = $wpdb->prefix . 'course_participants';
+    $participants_table = $wpdb->prefix . 'participants';
+    $courses_table = $wpdb->prefix . 'courses';
+    $data = null;
+
+    if ($record_id > 0) {
+        $sql = $wpdb->prepare("
+            SELECT p.*, c.template_id
+            FROM {$junction_table} AS cp
+            INNER JOIN {$participants_table} AS p
+            ON cp.participant_id = p.id
+            INNER JOIN {$courses_table} AS c
+            ON cp.course_id = c.id_course
+            WHERE cp.id = %d
+        ", $record_id);
+
+        $data = $wpdb->get_row($sql, ARRAY_A);
+    }
+
+    $data = apply_filters('woocerti_get_course_participant_data', $data, $record_id);
+
+    return $data;
+}
