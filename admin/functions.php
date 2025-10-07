@@ -137,6 +137,21 @@ class Woocerti_Admin {
         } else {
             global $wpdb;
             $table_name = $wpdb->prefix.'courses';
+            $certificate_templates = array();
+            $table_documents_certificates = $wpdb->prefix . 'documents_certificates';
+            $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE '%s'", $table_documents_certificates));
+
+            if ($table_exists === $table_documents_certificates) {
+                $sql = "
+                    SELECT id, lower(title) as title
+                    FROM {$table_documents_certificates}
+                    WHERE status = 1
+                    ORDER BY title ASC
+                ";
+                $certificate_templates = $wpdb->get_results($sql, ARRAY_A);
+            } else {
+                error_log(__("Woocerti: The 'documents_certificates' table does not exist. Make sure the template plugin is active.", 'woocertificatespackage'));
+            }
 
             // Default values
             $course_id = isset($_GET['id']) ? absint($_GET['id']) : 0;
@@ -188,7 +203,36 @@ class Woocerti_Admin {
             }
 
             // Include the form template file, passing all variables
-            include WOOCERTI_PLUGIN_DIR.'admin/templates/course-form.php';
+            // include WOOCERTI_PLUGIN_DIR.'admin/templates/course-form.php';
+
+            $template_path = WOOCERTI_PLUGIN_DIR . 'admin/templates/course-form.php';
+            if (file_exists($template_path)) {
+                extract(array(
+                    'certificate_templates' => $certificate_templates,
+                    'form_title' => $form_title,
+                    'course_id' => $course_id,
+                    'id_user' => $id_user,
+                    'institutes' => $institutes,
+                    'tutor_instructor' => $tutor_instructor,
+                    'status' => $status,
+                    'code' => $code,
+                    'course_name' => $course_name,
+                    'academic_hours' => $academic_hours,
+                    'location' => $location,
+                    'course_date' => $course_date,
+                    'academic_program' => $academic_program,
+                    'price_per_student' => $price_per_student,
+                    'certification_fee_type' => $certification_fee_type,
+                    'certification_fee_value' => $certification_fee_value,
+                    'date_created' => $date_created,
+                    'date_updated' => $date_updated,
+                    'is_tutor' => $is_tutor
+
+                ));
+                include($template_path);
+            } else {
+                echo '<div class="notice notice-error"><p>' . __('Template file not found.', 'woocertificatespackage') . '</p></div>';
+            }
         }
     }
 
@@ -224,6 +268,7 @@ class Woocerti_Admin {
             'certification_fee_value' => floatval($_POST['certification_fee_value']),
             'status' => sanitize_text_field($_POST['status']),
             'date_updated' => current_time('mysql'),
+            'template_id' => isset($_POST['template_id']) ? intval($_POST['template_id']) : null,
         );
         if ($course_data['status'] === 'Pending') {
             $status = 'Pending';
@@ -347,6 +392,7 @@ class Woocerti_Admin {
             'messages' => array(
                 'assigned_user_required' => __('You must assign a user to continue.', 'woocertificatespackage'),
                 'course_name_required' => __('The course name is required.', 'woocertificatespackage'),
+                'template_required' => __('The template is required.', 'woocertificatespackage'),
                 'course_name_maxlength' => __('The course name cannot exceed 300 characters.', 'woocertificatespackage'),
                 'academic_hours_invalid' => __('Academic hours must be a number greater than zero.', 'woocertificatespackage'),
                 'course_date_past' => __('The date cannot be earlier than the current one.', 'woocertificatespackage'),

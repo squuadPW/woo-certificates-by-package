@@ -10,7 +10,7 @@
                 <h2><?php echo esc_html(__('Course Details', 'woocertificatespackage')); ?></h2>
             </div>
             <div class="card-content">
-                <div class="form-group-row two-columns">
+                <div class="form-group-row three-columns">
                     <div class="form-group-item">
                         <label for="id_user">
                             <strong>
@@ -28,20 +28,19 @@
                         </select>
                         <span class="error-message"></span>
                     </div>
-                    <div class="form-group-item">
-                        <label for="tutor_instructor"><strong><?php echo esc_html(__('Tutor or Instructor', 'woocertificatespackage')); ?></strong></label>
-                        <input type="text" name="tutor_instructor" id="tutor_instructor" value="<?php echo esc_attr($tutor_instructor); ?>" class="regular-text">
-                    </div>
-                </div>
-
-                <div class="form-group-row three-columns">
-                    <div class="form-group-item">
+                    <div class="form-group-item woocerti-pt-1">
                         <label><strong><?php echo esc_html(__('Is the assigned user the tutor?', 'woocertificatespackage')); ?></strong></label>
                         <div class="is-tutor-checkbox-wrapper">
                             <input type="checkbox" id="is_tutor_checkbox" name="is_tutor" value="1" <?php checked(isset($_POST['is_tutor']), 1); ?>>
                             <label for="is_tutor_checkbox"><?php echo esc_html(__('Yes, the assigned user is the tutor', 'woocertificatespackage')); ?></label>
                         </div>
                     </div>
+                    <div class="form-group-item">
+                        <label for="tutor_instructor"><strong><?php echo esc_html(__('Tutor or Instructor', 'woocertificatespackage')); ?></strong></label>
+                        <input type="text" name="tutor_instructor" id="tutor_instructor" value="<?php echo esc_attr($tutor_instructor); ?>" class="regular-text">
+                    </div>
+                </div>
+                <div class="form-group-row three-columns">
                     <div class="form-group-item">
                         <label for="status"><strong><?php echo esc_html(__('Status', 'woocertificatespackage')); ?></strong></label>
                         <select id="status" name="status" class="regular-text">
@@ -51,7 +50,20 @@
                         </select>
                         <span class="error-message"></span>
                     </div>
-                    <?php if ($course_id > 0) : ?>
+                    <div id="content_template_id" class="form-group-item woocerti-d-none">
+                        <label for="template_id"><strong><?php echo esc_html(__('Template', 'woocertificatespackage')); ?><span class="required" aria-hidden="true">*</span></strong></label>
+                        <select id="template_id" name="template_id" class="select short" required>
+                            <option value=""><?php echo __('Select a Template', 'woocertificatespackage'); ?></option>
+                            <?php
+                                foreach ($certificate_templates as $template) : ?>
+                                    <option value="<?php echo esc_attr($template['id']); ?>">
+                                        <?php echo esc_html(ucwords($template['title'])); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                        </select>
+                        <span class="error-message"></span>
+                    </div>
+                     <?php if ($course_id > 0) : ?>
                     <div class="form-group-item">
                         <label for="course_code"><strong><?php echo esc_html(__('Course Code', 'woocertificatespackage')); ?></strong></label>
                         <input type="text" name="course_code" id="course_code" value="<?php echo esc_attr($code); ?>" class="regular-text" readonly="readonly">

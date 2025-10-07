@@ -162,6 +162,14 @@
   }
 }
 
+.woocerti-d-none {
+  display: none;
+}
+
+.woocerti-pt-1 {
+  padding-top: 1rem;
+}
+
 /* =========================================
    Styles for the Confirmation Modal
    ========================================= */

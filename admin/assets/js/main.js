@@ -6,6 +6,7 @@ jQuery(document).ready(function($) {
     const assignedUserSelect = $('#id_user');
     const isTutorCheckbox = $('#is_tutor_checkbox');
     const tutorInstructorInput = $('#tutor_instructor');
+    const $statusInput = $("#status");
 
     /**
      * Manages the dynamic behavior of the 'Tutor or instructor' field when interacting with the user.
@@ -55,6 +56,12 @@ jQuery(document).ready(function($) {
         } else {
             // If they do not match or the user field is empty, the tutor field must be editable.
             tutorInstructorInput.prop('readonly', false).css('background-color', '#ffffff');
+        }
+
+        if ($statusInput.val() === 'Approved') {
+            $("#content_template_id").removeClass().addClass("form-group-item");
+        } else {
+            $("#content_template_id").removeClass().addClass("form-group-item woocerti-d-none");
         }
     }
 
@@ -114,6 +121,14 @@ jQuery(document).ready(function($) {
                 if (fieldValue !== 'Pending' && fieldValue !== 'Approved' && fieldValue !== 'Rejected') {
                     isValid = false;
                     errorMessage = woocerti_data.messages.status_invalid;
+                }
+                break;
+            case 'template_id':
+                if ($('#status').val() === 'Approved') {
+                    if ($.trim(fieldValue) === '') {
+                        isValid = false;
+                        errorMessage = woocerti_data.messages.template_required;
+                    }
                 }
                 break;
             case 'price_per_student':
@@ -181,6 +196,8 @@ jQuery(document).ready(function($) {
         isFormValid &= validateField($('#certification_fee_type'));
         // Validation for 'Status'
         isFormValid &= validateField($('#status'));
+        // Validation for 'Template'
+        isFormValid &= validateField($('#template_id'));
         // Validation for 'Status'
         isFormValid &= validatePercentageFee($('#certification_fee_type'), $('#certification_fee_value'));
 
@@ -229,6 +246,19 @@ jQuery(document).ready(function($) {
         validateField($(this));
     });
     $('#status').on('change', function () {
+        validateField($(this));
+        $('#template_id').val('');
+        $('#template_id').removeClass('error-field');
+        $('#template_id').closest('.form-group-item').find('.error-message').text('').hide();
+
+        if ($(this).val() === 'Approved') {
+            $("#content_template_id").removeClass().addClass("form-group-item");
+        } else {
+            $("#content_template_id").removeClass().addClass("form-group-item woocerti-d-none");
+        }
+    });
+
+    $('#template_id').on('change', function () {
         validateField($(this));
     });
 
