@@ -409,6 +409,7 @@ class Woocerti_Public {
         $course_id = isset($_POST['course_id']) ? intval($_POST['course_id']) : 0;
         $inssued_in = isset($_POST['single_student_inssued_in']) ? sanitize_text_field($_POST['single_student_inssued_in']) : '';
         $phone_number = isset($_POST['phone_full']) ? sanitize_text_field($_POST['phone_full']) : '';
+        $current_time = current_time('mysql');
 
         $allowed_types = ['passport', 'identification_document', 'ssn'];
         if (empty($document_type) || !in_array($document_type, $allowed_types)) {
@@ -462,7 +463,7 @@ class Woocerti_Public {
                     'last_name' => $last_name,
                     'email' => $email,
                     'phone_number' => $phone_number,
-                    'date_updated' => current_time('mysql')
+                    'date_updated' => $current_time
                 ),
                 array('id_participant' => $participant_id)
             );
@@ -477,12 +478,14 @@ class Woocerti_Public {
                     'inssued_in' => $inssued_in,
                     'email' => $email,
                     'phone_number' => $phone_number,
-                    'date_created' => current_time('mysql'),
-                    'date_updated' => current_time('mysql')
+                    'date_created' => $current_time,
+                    'date_updated' => $current_time
                 )
             );
             $participant_id = $wpdb->insert_id;
         }
+
+        $id_course_participant = 0;
 
         if ($participant_id) {
             $relation_exists = $wpdb->get_var($wpdb->prepare(
@@ -494,21 +497,32 @@ class Woocerti_Public {
             if ($relation_exists) {
                 wp_send_json_error(array('messages' => array(__('This participant is already registered for this course.', 'woocertificatespackage'))));
             } else {
-                $wpdb->insert(
+                $result = $wpdb->insert(
                     $course_participants_table,
                     array(
                         'id_course' => $course_id,
                         'id_participant' => $participant_id,
-                        'date_created' => current_time('mysql'),
-                        'date_updated' => current_time('mysql')
+                        'date_created' => $current_time,
+                        'date_updated' => $current_time
                     )
                 );
+
+                if ($result !== false) {
+                    $id_course_participant = $wpdb->insert_id;
+                }
             }
         }
 
         // Issue the certificate if there are still certificates available for this course
-        if ($this->woocerti_issue_certificate($course_id)) {
-            wp_send_json_success(array('message' => __('Certificate issued successfully!', 'woocertificatespackage')));
+        if ($id_course_participant > 0) {
+            if ($this->woocerti_issue_certificate($course_id)) {
+                $courses_table = $wpdb->prefix.'courses';
+                $course_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM $courses_table WHERE id_course = %d", $course_id));
+                apply_filters('create_certificate_edusystem', 'certificate', $course_data->course_name, '', 0, $id_course_participant, $current_time);
+                wp_send_json_success(array('message' => __('Certificate issued successfully!', 'woocertificatespackage')));
+            } else {
+                wp_send_json_error(array('messages' => array(__('There are no certificates available for this course.', 'woocertificatespackage'))));
+            }
         } else {
             wp_send_json_error(array('messages' => array(__('There are no certificates available for this course.', 'woocertificatespackage'))));
         }
@@ -1499,7 +1513,9 @@ class Woocerti_Public {
                         continue;
                     }
 
-                    $wpdb->insert(
+                    $id_course_participant = 0;
+
+                    $result = $wpdb->insert(
                         $course_participants_table,
                         [
                             'id_course' => $course_id,
@@ -1509,7 +1525,15 @@ class Woocerti_Public {
                         ]
                     );
 
+                    if ($result !== false) {
+                        $id_course_participant = $wpdb->insert_id;
+                    }
+
                     if ($this->woocerti_issue_certificate($course_id)) {
+                        $courses_table = $wpdb->prefix.'courses';
+                        $course_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM $courses_table WHERE id_course = %d", $course_id));
+                        apply_filters('create_certificate_edusystem', 'certificate', $course_data->course_name, '', 0, $id_course_participant, current_time('mysql'));
+
                         $results['issued_count']++;
                         $results['detailed_results'][] = [
                             'row_number' => $row_number,

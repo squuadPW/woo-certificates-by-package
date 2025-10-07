@@ -203,19 +203,73 @@ function woocerti_get_course_and_participant_data(int $record_id = 0) {
 
     if ($record_id > 0) {
         $sql = $wpdb->prepare("
-            SELECT p.*, c.template_id
+            SELECT p.*, c.template_id, c.id_course
             FROM {$junction_table} AS cp
             INNER JOIN {$participants_table} AS p
-            ON cp.participant_id = p.id
+            ON cp.id_participant = p.id_participant
             INNER JOIN {$courses_table} AS c
-            ON cp.course_id = c.id_course
-            WHERE cp.id = %d
+            ON cp.id_course = c.id_course
+            WHERE cp.id_course_participant = %d
         ", $record_id);
 
         $data = $wpdb->get_row($sql, ARRAY_A);
     }
 
     $data = apply_filters('woocerti_get_course_participant_data', $data, $record_id);
+
+    return $data;
+}
+
+/**
+* Retrieves all participant information.
+* Allows other plugins to modify the output using a filter.
+*
+* @param int $id_participant The ID of the participant 'participants'.
+* @return array|null The participant data, or null if none are found.
+*/
+function woocerti_get_participant_data(int $id_participant = 0) {
+    global $wpdb;
+    $participants_table = $wpdb->prefix . 'participants';
+    $data = null;
+
+    if ($id_participant > 0) {
+        $sql = $wpdb->prepare("
+            SELECT *
+            FROM {$participants_table}
+            WHERE id_participant = %d
+        ", $id_participant);
+
+        $data = $wpdb->get_row($sql, ARRAY_A);
+    }
+
+    $data = apply_filters('woocerti_get_participant_data', $data, $id_participant);
+
+    return $data;
+}
+
+/**
+* Retrieves all course information.
+* Allows other plugins to modify the output using a filter.
+*
+* @param int $id_course The ID of the course 'courses'.
+* @return array|null The course data, or null if none are found.
+*/
+function woocerti_get_course_data(int $id_course = 0) {
+    global $wpdb;
+    $courses_table = $wpdb->prefix . 'courses';
+    $data = null;
+
+    if ($id_course > 0) {
+        $sql = $wpdb->prepare("
+            SELECT *
+            FROM {$courses_table}
+            WHERE id_course = %d
+        ", $id_course);
+
+        $data = $wpdb->get_row($sql, ARRAY_A);
+    }
+
+    $data = apply_filters('woocerti_get_course_data', $data, $id_course);
 
     return $data;
 }
