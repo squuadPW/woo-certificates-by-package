@@ -382,7 +382,21 @@ class Woocerti_Admin {
 	/**
 	 * Enqueues admin CSS and JavaScript files.
 	 */
-	public function enqueue_admin_assets() {
+	public function enqueue_admin_assets($hook) {
+        $plugin_pages = array(
+            'toplevel_page_woocerti-courses',
+            'courses_page_woocerti-add-course'
+        );
+
+        if (!in_array($hook, $plugin_pages)) {
+            return;
+        }
+
+        if (function_exists('WC') && WC()) {
+            wp_enqueue_style('woocommerce_admin_styles', WC()->plugin_url() . '/assets/css/admin.css', array(), WC_VERSION);
+        }
+
+
 		// Enqueue CSS file.
 		wp_enqueue_style('woocerti-admin-style', WOOCERTI_PLUGIN_URL.'admin/assets/css/style.css', array(), WOOCERTI_VERSION_ASSETS);
 		// Enqueue JS file.

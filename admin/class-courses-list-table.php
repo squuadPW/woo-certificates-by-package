@@ -154,6 +154,45 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
     }
 
     /**
+     * Renders the 'status' column with WooCommerce styles.
+     *
+     * @param object $item The course data object.
+     * @return string The formatted HTML for the status.
+     */
+    protected function column_status($item) {
+        $status_slug = strtolower($item->status);
+
+        switch ($status_slug) {
+            case 'pending':
+                $class = 'status-pending';
+                break;
+            case 'approved':
+                $class = 'status-completed';
+                break;
+            case 'completed':
+                $class = 'status-processing';
+                break;
+            case 'rejected':
+            case 'declined':
+                $class = 'status-cancelled';
+                break;
+            case 'draft':
+            default:
+                $class = 'status-draft';
+                break;
+        }
+
+        $html = sprintf(
+            '<mark class="order-status %s tips" data-tip="%s"><span>%s</span></mark>',
+            esc_attr($class),
+            esc_attr($item->status),
+            esc_html($item->status)
+        );
+
+        return $html;
+    }
+
+    /**
      * Displays the data for each column.
      *
      * @param object $item - The object of the current course.
