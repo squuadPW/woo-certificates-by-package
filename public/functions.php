@@ -519,8 +519,9 @@ class Woocerti_Public {
                 $courses_table = $wpdb->prefix.'courses';
                 $course_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM $courses_table WHERE id_course = %d", $course_id));
                 $certificate_url = apply_filters('create_certificate_edusystem', 'certificate', $course_data->course_name, '', 0, $id_course_participant, $current_time);
+                error_log('Course Data: ' . print_r($certificate_url, true));
 
-                if (is_string($certificate_url['url']) && !empty($certificate_url['url'])) {
+                if (is_string($certificate_url['download_url']) && !empty($certificate_url['download_url'])) {
                     $participant_data = woocerti_get_course_and_participant_data($id_course_participant);
 
                     if ($participant_data && !empty($participant_data['email'])) {
@@ -530,7 +531,7 @@ class Woocerti_Public {
                         $email_sent = $this->woocerti_send_certificate_email(
                             $destinatario,
                             $asunto,
-                            $certificate_url['url'],
+                            $certificate_url['download_url'],
                             $course_data->course_name
                         );
                     }
@@ -1550,7 +1551,7 @@ class Woocerti_Public {
                         $course_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM $courses_table WHERE id_course = %d", $course_id));
                         $certificate_url = apply_filters('create_certificate_edusystem', 'certificate', $course_data->course_name, '', 0, $id_course_participant, current_time('mysql'));
 
-                        if (is_string($certificate_url['url']) && !empty($certificate_url['url'])) {
+                        if (is_string($certificate_url['download_url']) && !empty($certificate_url['download_url'])) {
                             $participant_data = woocerti_get_course_and_participant_data($id_course_participant);
 
                             if ($participant_data && !empty($participant_data['email'])) {
@@ -1560,7 +1561,7 @@ class Woocerti_Public {
                                 $email_sent = $this->woocerti_send_certificate_email(
                                     $destinatario,
                                     $asunto,
-                                    $certificate_url['url'],
+                                    $certificate_url['download_url'],
                                     $course_data->course_name
                                 );
                             }
