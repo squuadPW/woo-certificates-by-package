@@ -518,7 +518,23 @@ class Woocerti_Public {
             if ($this->woocerti_issue_certificate($course_id)) {
                 $courses_table = $wpdb->prefix.'courses';
                 $course_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM $courses_table WHERE id_course = %d", $course_id));
-                apply_filters('create_certificate_edusystem', 'certificate', $course_data->course_name, '', 0, $id_course_participant, $current_time);
+                $certificate_url = apply_filters('create_certificate_edusystem', 'certificate', $course_data->course_name, '', 0, $id_course_participant, $current_time);
+
+                if (is_string($certificate_url['url']) && !empty($certificate_url['url'])) {
+                    $participant_data = woocerti_get_course_and_participant_data($id_course_participant);
+
+                    if ($participant_data && !empty($participant_data['email'])) {
+                        $destinatario = $participant_data['email'];
+                        $asunto = sprintf(__('Certificate Issued for Course: %s!', 'woocertificatespackage'), $course_data->course_name);
+
+                        $email_sent = $this->woocerti_send_certificate_email(
+                            $destinatario,
+                            $asunto,
+                            $certificate_url['url'],
+                            $course_data->course_name
+                        );
+                    }
+                }
                 wp_send_json_success(array('message' => __('Certificate issued successfully!', 'woocertificatespackage')));
             } else {
                 wp_send_json_error(array('messages' => array(__('There are no certificates available for this course.', 'woocertificatespackage'))));
@@ -1532,7 +1548,23 @@ class Woocerti_Public {
                     if ($this->woocerti_issue_certificate($course_id)) {
                         $courses_table = $wpdb->prefix.'courses';
                         $course_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM $courses_table WHERE id_course = %d", $course_id));
-                        apply_filters('create_certificate_edusystem', 'certificate', $course_data->course_name, '', 0, $id_course_participant, current_time('mysql'));
+                        $certificate_url = apply_filters('create_certificate_edusystem', 'certificate', $course_data->course_name, '', 0, $id_course_participant, current_time('mysql'));
+
+                        if (is_string($certificate_url['url']) && !empty($certificate_url['url'])) {
+                            $participant_data = woocerti_get_course_and_participant_data($id_course_participant);
+
+                            if ($participant_data && !empty($participant_data['email'])) {
+                                $destinatario = $participant_data['email'];
+                                $asunto = sprintf(__('Certificate Issued for Course: %s!', 'woocertificatespackage'), $course_data->course_name);
+
+                                $email_sent = $this->woocerti_send_certificate_email(
+                                    $destinatario,
+                                    $asunto,
+                                    $certificate_url['url'],
+                                    $course_data->course_name
+                                );
+                            }
+                        }
 
                         $results['issued_count']++;
                         $results['detailed_results'][] = [
@@ -1592,6 +1624,49 @@ class Woocerti_Public {
             $errors = array(__('General error.', 'woocertificatespackage'), sprintf(__('Error: %s', 'woocertificatespackage'), $e->getMessage()));
             set_transient('woocerti_form_errors', $errors, HOUR_IN_SECONDS);
         }
+    }
+
+    /**
+     * Send an email with the certificate URL using the WooCommerce template.
+     *
+     * @param string $destinatario - Participant's email.
+     * @param string $asunto - Subject of the email.
+     * @param string $certificate_url - The URL of the issued certificate.
+     * @param string $course_name - Course name.
+     * @return bool true if the email was sent, false if it failed.
+     */
+    function woocerti_send_certificate_email($destinatario, $asunto, $certificate_url, $course_name) {
+        if (!function_exists('wc_get_template') || !function_exists('wp_mail')) {
+            return false;
+        }
+
+        ob_start();
+        wc_get_template( 'emails/email-header.php', array( 'email_heading' => $asunto ) );
+        echo '
+            <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                <p>' . sprintf(esc_html__('Dear participant,', 'woocertificatespackage')) . '</p>
+                <p>' . wp_kses_post(sprintf(__('We are pleased to inform you that your certificate for the <strong>%s</strong> course has been successfully issued.', 'woocertificatespackage'), esc_html($course_name))) . '</p>
+                <p>' . esc_html__('You can download or view your certificate at any time using the following unique and secure link:', 'woocertificatespackage') . '</p>
+                <p style="text-align: center; margin: 30px 0;">
+                    <a
+                        href="' . esc_url($certificate_url) . '"
+                        target="_blank"
+                        style="background-color: #0073aa; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;"
+                    >
+                        ' . esc_html__('View / Download Certificate', 'woocertificatespackage') . '
+                    </a>
+                </p>
+                <p>' . esc_html__("Please save this link safely. If you have any questions, please don't hesitate to contact our support team.", 'woocertificatespackage') . '</p>
+                <p>' . esc_html__('Best regards,', 'woocertificatespackage') . '<br><strong>' . get_bloginfo('name') . '</strong></p>
+            </div>
+        ';
+
+        wc_get_template( 'emails/email-footer.php' );
+
+        $email_content = ob_get_clean();
+        $headers = array('Content-Type: text/html; charset=UTF-8');
+        $email_enviado = wp_mail( $destinatario, $asunto, $email_content, $headers );
+        return $email_enviado;
     }
 
     /**
