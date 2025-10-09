@@ -385,7 +385,7 @@ class Woocerti_Admin {
 	public function enqueue_admin_assets($hook) {
         $plugin_pages = array(
             'toplevel_page_woocerti-courses',
-            'courses_page_woocerti-add-course'
+            'cursos_page_woocerti-add-course'
         );
 
         if (!in_array($hook, $plugin_pages)) {

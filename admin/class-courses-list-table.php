@@ -161,24 +161,36 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
      */
     protected function column_status($item) {
         $status_slug = strtolower($item->status);
+        $status_label = '';
 
         switch ($status_slug) {
             case 'pending':
                 $class = 'status-pending';
+                $status_label = __('Awaiting Review', 'woocertificatespackage');
                 break;
             case 'approved':
                 $class = 'status-completed';
+                $status_label = __('Approved', 'woocertificatespackage');
                 break;
             case 'completed':
                 $class = 'status-processing';
+                $status_label = __('Completed', 'woocertificatespackage');
                 break;
             case 'rejected':
+                $class = 'status-cancelled';
+                $status_label = __('Rejected', 'woocertificatespackage');
+                break;
             case 'declined':
                 $class = 'status-cancelled';
+                $status_label = __('Deleted', 'woocertificatespackage');
                 break;
             case 'draft':
+                $class = 'status-draft';
+                $status_label = __('Draft', 'woocertificatespackage');
+                break;
             default:
                 $class = 'status-draft';
+                $status_label = esc_html($item->status);
                 break;
         }
 
@@ -186,7 +198,7 @@ class Woocerti_Courses_List_Table extends WP_List_Table {
             '<mark class="order-status %s tips" data-tip="%s"><span>%s</span></mark>',
             esc_attr($class),
             esc_attr($item->status),
-            esc_html($item->status)
+            esc_html($status_label)
         );
 
         return $html;

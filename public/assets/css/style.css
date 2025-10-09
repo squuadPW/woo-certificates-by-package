@@ -34,12 +34,16 @@
 }
 .woocommerce-MyAccount-content form .form-row .form-row-field {
   margin-right: 1em;
+  margin-bottom: 1rem;
 }
 .woocommerce-MyAccount-content form .form-row .form-row-field:last-child {
   margin-right: 0;
 }
 .woocommerce-MyAccount-content form .form-row .form-row-field .iti {
   width: 100%;
+}
+.woocommerce-MyAccount-content form .form-row .form-row-field .border-input-radius {
+  border-radius: 8px;
 }
 .woocommerce-MyAccount-content form .form-row .no-margin-right {
   margin-right: 0 !important;
@@ -568,4 +572,8 @@
 }
 .modal-woocerti-logo-upload .modal-content .modal-body {
   padding-top: 20px;
+}
+
+#phone_number {
+  padding-left: 100px !important;
 }/*# sourceMappingURL=style.css.map */

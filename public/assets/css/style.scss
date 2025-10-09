@@ -41,12 +41,17 @@ $color-red: var(--secondary-color);
             /* Style for individual fields within a row */
             .form-row-field {
                 margin-right: 1em;
+                margin-bottom: 1rem;
                 &:last-child {
                     margin-right: 0;
                 }
 
                 .iti {
                     width: 100%;
+                }
+
+                .border-input-radius {
+                    border-radius: 8px;
                 }
             }
 
@@ -657,4 +662,8 @@ $color-red: var(--secondary-color);
             padding-top: 20px;
         }
     }
+}
+
+#phone_number {
+    padding-left: 100px !important;
 }
