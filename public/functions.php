@@ -521,7 +521,7 @@ class Woocerti_Public {
                 $certificate_url = apply_filters('create_certificate_edusystem', 'certificate', $course_data->course_name, '', 0, $id_course_participant, $current_time);
                 error_log('Course Data: ' . print_r($certificate_url, true));
 
-                if (is_string($certificate_url['download_url']) && !empty($certificate_url['download_url'])) {
+                if (is_string($certificate_url['url']) && !empty($certificate_url['url']) && is_string($certificate_url['download_url']) && !empty($certificate_url['download_url'])) {
                     $participant_data = woocerti_get_course_and_participant_data($id_course_participant);
 
                     if ($participant_data && !empty($participant_data['email'])) {
@@ -531,6 +531,7 @@ class Woocerti_Public {
                         $email_sent = $this->woocerti_send_certificate_email(
                             $destinatario,
                             $asunto,
+                            $certificate_url['url'],
                             $certificate_url['download_url'],
                             $course_data->course_name
                         );
@@ -1551,7 +1552,7 @@ class Woocerti_Public {
                         $course_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM $courses_table WHERE id_course = %d", $course_id));
                         $certificate_url = apply_filters('create_certificate_edusystem', 'certificate', $course_data->course_name, '', 0, $id_course_participant, current_time('mysql'));
 
-                        if (is_string($certificate_url['download_url']) && !empty($certificate_url['download_url'])) {
+                        if (is_string($certificate_url['url']) && !empty($certificate_url['url']) && is_string($certificate_url['download_url']) && !empty($certificate_url['download_url'])) {
                             $participant_data = woocerti_get_course_and_participant_data($id_course_participant);
 
                             if ($participant_data && !empty($participant_data['email'])) {
@@ -1561,6 +1562,7 @@ class Woocerti_Public {
                                 $email_sent = $this->woocerti_send_certificate_email(
                                     $destinatario,
                                     $asunto,
+                                    $certificate_url['url'],
                                     $certificate_url['download_url'],
                                     $course_data->course_name
                                 );
@@ -1636,7 +1638,7 @@ class Woocerti_Public {
      * @param string $course_name - Course name.
      * @return bool true if the email was sent, false if it failed.
      */
-    function woocerti_send_certificate_email($destinatario, $asunto, $certificate_url, $course_name) {
+    function woocerti_send_certificate_email($destinatario, $asunto, $verify_url, $download_url, $course_name) {
         if (!function_exists('wc_get_template') || !function_exists('wp_mail')) {
             return false;
         }
@@ -1648,14 +1650,22 @@ class Woocerti_Public {
                 <p>' . sprintf(esc_html__('Dear participant,', 'woocertificatespackage')) . '</p>
                 <p>' . wp_kses_post(sprintf(__('We are pleased to inform you that your certificate for the <strong>%s</strong> course has been successfully issued.', 'woocertificatespackage'), esc_html($course_name))) . '</p>
                 <p>' . esc_html__('You can download or view your certificate at any time using the following unique and secure link:', 'woocertificatespackage') . '</p>
-                <p style="text-align: center; margin: 30px 0;">
+                <p style="text-align: center; margin: 30px 0 15px;">
                     <a
-                        href="' . esc_url($certificate_url) . '"
+                        href="' . $download_url . '"
                         target="_blank"
-                        style="background-color: #0073aa; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;"
+                        style="background-color: #0073aa; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-bottom: 10px; display: inline-block;"
                     >
-                        ' . esc_html__('View / Download Certificate', 'woocertificatespackage') . '
-                    </a>
+                        ' . esc_html__('Download Certificate', 'woocertificatespackage') . ' </a>
+                </p>
+
+                <p style="text-align: center; margin: 15px 0 30px;">
+                    <a
+                        href="' . $verify_url . '"
+                        target="_blank"
+                        style="background-color: #3cb371; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;"
+                    >
+                        ' . esc_html__('Verify Certificate', 'woocertificatespackage') . ' </a>
                 </p>
                 <p>' . esc_html__("Please save this link safely. If you have any questions, please don't hesitate to contact our support team.", 'woocertificatespackage') . '</p>
                 <p>' . esc_html__('Best regards,', 'woocertificatespackage') . '<br><strong>' . get_bloginfo('name') . '</strong></p>
