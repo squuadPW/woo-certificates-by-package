@@ -1,0 +1,153 @@
+$border-color: #ccc;
+$border-radius: 4px;
+$input-height: 38px;
+
+.woocommerce-MyAccount-navigation ul li.woocommerce-MyAccount-navigation-link--alliances a:before{
+	content: "\f2b5";
+    margin-right: 8px;
+}
+
+.woocommerce-MyAccount-navigation ul li.woocommerce-MyAccount-navigation-link--invoices a:before{
+	content: "\f571";
+    margin-right: 8px;
+}
+
+
+/* ==============================================
+ * Styles for Sort Icons in the Alliance Table
+ * ============================================== */
+.woocommerce-MyAccount-alliances-table {
+    th.sorted a, th.sortable a {
+        position: relative;
+        padding-right: 18px;
+        display: inline-block;
+    }
+
+    .sort-icon {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        line-height: 1;
+        font-style: normal;
+        font-weight: normal;
+        font-size: 10px;
+        color: #888;
+        &:before {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        &:after {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        height: 20px;
+    }
+
+    .edusystem-sort-both {
+        &:before {
+            content: "\25B2";
+            opacity: 0.3;
+        }
+        &:after {
+            content: "\25BC";
+            opacity: 0.3;
+        }
+    }
+
+    .edusystem-sort-up {
+        &:before {
+            content: "\25B2";
+            color: var(--primary-color);
+        }
+        &:after {
+            content: "\25BC";
+            opacity: 0.3;
+        }
+    }
+
+    .edusystem-sort-down {
+        &:before {
+            content: "\25B2";
+            opacity: 0.3;
+        }
+        &:after {
+            content: "\25BC";
+            color: var(--primary-color);
+        }
+    }
+}
+
+.edusystem-alliance-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    position: relative;
+    margin-bottom: 2.5em;
+    margin-top: 2.5em;
+
+    .woocommerce-result-count {
+        position: absolute;
+        left: 0;
+    }
+
+    .edusystem-alliance-search-form {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        flex-direction: initial;
+        position: absolute;
+        right: 0;
+
+        input[type="search"] {
+            color: #43454b;
+            -webkit-appearance: none;
+            box-sizing: border-box;
+            font-weight: 400;
+            width: 100%;
+            border-radius: 8px 0 0 8px;
+            box-shadow: none !important;
+            padding: 12px 16px !important;
+            background-color: #fff !important;
+            max-width: 250px;
+            position: relative;
+            z-index: 1;
+            border: 1px solid $border-color;
+        }
+
+        input[type="search"]:focus {
+            border-radius: 8px 0 0 8px;
+            box-shadow: none;
+            outline: none;
+        }
+
+        .button {
+            border-radius: 0 8px 8px 0 !important;
+            padding: 13px 10px !important;
+            width: auto;
+            margin: 0;
+            z-index: 2;
+            margin-left: -1px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        flex-direction: column;
+        align-items: flex-start;
+
+        .woocommerce-result-count {
+            margin-bottom: 1em;
+        }
+
+        .edusystem-alliance-search-form {
+            width: 100%;
+
+            input[type="search"] {
+                width: 100%;
+            }
+        }
+    }
+}

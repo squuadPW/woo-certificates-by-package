@@ -12,6 +12,11 @@ require WOOCERTI_PLUGIN_DIR.'vendor/autoload.php';
 class Woocerti_Public {
 
     /**
+     * @var Alliance_Module Instance of the Alliance module.
+     */
+    protected $alliance_module;
+
+    /**
      * Constructor.
      */
     public function __construct() {
@@ -54,6 +59,33 @@ class Woocerti_Public {
         add_filter('woocommerce_locate_template', array($this, 'woocerti_locate_template'), 10, 3);
         // Add the button to the thank you page
         add_action('woocommerce_thankyou', array($this, 'add_go_to_certificates_button'), 10);
+
+        // INITIALIZATION OF DECOUPLED MODULES
+        $this->init_alliance_module();
+    }
+
+    /**
+     * Initializes and configures the Alliance module.
+     */
+    private function init_alliance_module() {
+        // Define the configuration for the Alliance module.
+        $alliance_config = [
+            'base_url' => WOOCERTI_PLUGIN_URL . 'public/alliance/',
+            'base_dir' => WOOCERTI_PLUGIN_DIR . 'public/alliance/',
+            'version_assets' => WOOCERTI_VERSION_ASSETS,
+            'posts_per_page' => WOOCERTI_POSTS_PER_PAGE,
+        ];
+
+        $alliance_class_file = $alliance_config['base_dir'] . 'class-alliance-module.php';
+
+        // Load the Alliance class file
+        if (file_exists($alliance_class_file)) {
+            require_once $alliance_class_file;
+            // Initialize and inject configuration
+            $this->alliance_module = new Alliance_Module($alliance_config);
+        } else {
+            error_log(__("Woocerti: The Alliance module file was not found in: ", 'woocertificatespackage') . $alliance_class_file);
+        }
     }
 
     /**
