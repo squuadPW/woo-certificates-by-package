@@ -46,6 +46,7 @@ class Alliance_Module {
             add_action('woocommerce_account_invoices_endpoint', array($this, 'render_invoices_content'));
             // Enqueue scripts and styles.
             add_action('wp_enqueue_scripts', array($this, 'enqueue_public_edusystem_assets'));
+            add_action('wp_ajax_get_list_fee_alliance',  array($this, 'ajax_get_list_fee_alliance'));
         }
     }
 
@@ -60,7 +61,47 @@ class Alliance_Module {
             if ($is_alliance_endpoint || $is_invoices_endpoint) {
                 if (!empty($this->config['base_url'])) {
                     wp_enqueue_style('edusystem-alliance-style', $this->config['base_url'] . 'assets/css/style.css', array(), $this->config['version_assets']);
-                    wp_enqueue_script('edusystem-alliance-script', $this->config['base_url'] . 'assets/js/main.js', array('jquery'), $this->config['version_assets'], true);
+                    if ($is_invoices_endpoint) {
+                        wp_deregister_style('flatpicker-css');
+                        wp_deregister_script('flatpickr-js');
+                        wp_deregister_script('flatpickr-js-es');
+                        wp_enqueue_style('edusystem-flatpickr-style', $this->config['base_url'] . 'assets/css/flatpickr.min.css', array(), '4.6.13');
+                        wp_enqueue_script('edusystem-flatpickr-script', $this->config['base_url'] . 'assets/js/flatpickr.js', array('jquery'), '4.6.13', true);
+                        wp_enqueue_script('edusystem-flatpickr-js-es', $this->config['base_url'] . 'assets/js/flatpickr-es.js', array('jquery'), '4.6.13', true);
+                        wp_enqueue_script('edusystem-alliance-script', $this->config['base_url'] . 'assets/js/main.js', array('jquery', 'edusystem-flatpickr-script', 'edusystem-flatpickr-js-es'), $this->config['version_assets'], true);
+                    } else {
+                        wp_enqueue_script('edusystem-alliance-script', $this->config['base_url'] . 'assets/js/main.js', array('jquery'), $this->config['version_assets'], true);
+                    }
+
+                    $start_date = date('m/d/Y', strtotime('today'));
+
+                    $data_to_pass = array(
+                        'ajax_url' => admin_url('admin-ajax.php'),
+                        'nonce' => wp_create_nonce('fee_alliance'),
+                        'alliance_id' => get_user_meta(get_current_user_id(), 'alliance_id', true),
+                        'messages' => array(
+                            'show_payments' => __('Show payments', 'edusystem'),
+                            'show_orders' => __('Show orders', 'edusystem'),
+                            'start_date' => $start_date,
+                            'not_records' => __('There are not records', 'edusystem'),
+                            'payment_id' => __('Payment ID', 'edusystem'),
+                            'customer' => __('Customer', 'edusystem'),
+                            'fee' => __('Fee', 'edusystem'),
+                            'created' => __('Created', 'edusystem'),
+                            'status' => __('Status', 'edusystem'),
+                            'month' => __('Month', 'edusystem'),
+                            'amount' => __('Amount', 'edusystem'),
+                            'total_orders' => __('Total orders', 'edusystem'),
+                        ),
+                        'wc_format_params' => array(
+                            'currency_format_num_decimals' => absint(get_option('woocommerce_price_num_decimals', 2)),
+                            'currency_format_symbol' => get_woocommerce_currency_symbol(),
+                            'currency_format_decimal_sep' => wc_get_price_decimal_separator(),
+                            'currency_format_thousand_sep' => wc_get_price_thousand_separator(),
+                            'currency_format' => get_woocommerce_price_format(),
+                        )
+                    );
+                    wp_localize_script('edusystem-alliance-script', 'edusystem_alliance_data', $data_to_pass);
                 }
             }
         }
@@ -182,7 +223,6 @@ class Alliance_Module {
                 LIMIT %d OFFSET %d
             ", $alliance_id, $posts_per_page, $offset));
         } else {
-            $alliance_id = 80;
             // Query to get the total number of alliances (for pagination)
             $total_alliances = $wpdb->get_var($wpdb->prepare("
                 SELECT COUNT(*) FROM `$table_name`
@@ -221,9 +261,362 @@ class Alliance_Module {
      * Displays content for the 'invoices' endpoint.
      */
     public function render_invoices_content() {
-        echo '<h2>' . esc_html__('Listado de Facturas', 'edusystem') . '</h2>';
-        // Aquí iría el código para mostrar el listado de facturas.
-        echo '<p>' . esc_html__('Contenido de la página de Facturas.', 'edusystem') . '</p>';
+        $data = $this->get_list_fee_alliance_data([
+            'filter' => 'this-month',
+            'custom' => date('m/d/Y')
+        ]);
+
+        $start_date = date('m/d/Y', strtotime('today'));
+
+        $cards = [
+            [
+                'title' => __('Balance', 'edusystem'),
+                'value' => $data['current_invoice']['total'],
+                'icon' => 'dashicons-chart-pie',
+                'id' => 'card-alliance-balance',
+                'visible' => true
+            ], [
+                'title' => __('Total Paid', 'edusystem'),
+                'value' => $data['transactions']['total_paid'],
+                'icon' => 'dashicons-money-alt',
+                'id' => 'card-alliance-paid',
+                'visible' => true
+            ], [
+                'title' => __('Pending Payment', 'edusystem'),
+                'value' => $data['transactions']['total_pending'],
+                'icon' => 'dashicons-info-outline',
+                'id' => 'card-alliance-pending',
+                'visible' => true
+            ], [
+                'title' => __('Orders', 'edusystem'),
+                'value' => $data['current_invoice']['total'],
+                'icon' => 'dashicons-editor-ul',
+                'id' => 'card-alliance-orders',
+                'visible' => true
+            ], [
+                'title' => __('Transactions', 'edusystem'),
+                'value' => $data['transactions']['total'],
+                'icon' => 'dashicons-list-view',
+                'id' => 'card-alliance-transactions',
+                'visible' => false
+            ],
+        ];
+
+        $optionsFilter = [
+            [
+                'value' => 'today',
+                'label' => __('Today', 'edusystem'),
+                'selected' => false
+            ], [
+                'value' => 'yesterday',
+                'label' => __('yesterday', 'edusystem'),
+                'selected' => false
+            ], [
+                'value' => 'this-week',
+                'label' => __('This week', 'edusystem'),
+                'selected' => false
+            ], [
+                'value' => 'last-week',
+                'label' => __('Last week', 'edusystem'),
+                'selected' => false
+            ], [
+                'value' => 'this-month',
+                'label' => __('This month', 'edusystem'),
+                'selected' => true
+            ], [
+                'value' => 'last-month',
+                'label' => __('Last month', 'edusystem'),
+                'selected' => false
+            ], [
+                'value' => 'custom',
+                'label' => __('Custom', 'edusystem'),
+                'selected' => false
+            ]
+        ];
+
+        $invoice_data = array(
+            'cards' => $cards,
+            'current_invoice' => $data['current_invoice'],
+            'transactions' => $data['transactions'],
+            'optionsFilter' => $optionsFilter,
+            'start_date' => $start_date,
+        );
+
+        $this->render_template('invoice-table', $invoice_data);
+    }
+
+    public function get_list_fee_alliance_data(array $args = []): array {
+        $default_filter = 'this-month';
+        $default_custom = date('m/d/Y');
+
+        $filter = isset($args['filter']) ? sanitize_text_field($args['filter']) : $default_filter;
+        $custom = isset($args['custom']) ? sanitize_text_field($args['custom']) : $default_custom;
+
+        $alliance_id = isset($args['alliance_id']) ? $args['alliance_id'] : get_user_meta(get_current_user_id(), 'alliance_id', true);
+
+        $transactions = [];
+
+        $dates = $this->get_dates_search($filter, $custom);
+        $current_invoice = $this->get_invoices_alliances($dates[0], $dates[1], $alliance_id);
+
+        $pending  = $this->get_transactions_alliances($dates[0], $dates[1], $alliance_id, 0);
+        $complete = $this->get_transactions_alliances($dates[0], $dates[1], $alliance_id, 1);
+
+        $total_pending_raw  = (float) ($pending['total'] ?? 0);
+        $total_complete_raw = (float) ($complete['total'] ?? 0);
+        $total_combined_raw = $total_pending_raw + $total_complete_raw;
+
+        $transactions['total_pending'] = wc_price($total_pending_raw);
+        $transactions['total_paid'] = wc_price($total_complete_raw);
+        $transactions['total'] = wc_price($total_combined_raw);
+        $transactions['orders'] = array_merge($pending['orders'] ?? [], $complete['orders'] ?? []);
+
+        $current_invoice['total'] = wc_price((float) ($current_invoice['total'] ?? 0));
+
+        return [ 'status' => 'success', 'current_invoice' => $current_invoice, 'transactions' => $transactions, 'dates' => $dates];
+    }
+
+    public function ajax_get_list_fee_alliance() {
+        check_ajax_referer('fee_alliance', 'nonce');
+
+        if (!$this->current_user_has_role('alliance')) {
+            wp_send_json_error(['message' => __('No tienes permisos para acceder a esta información.', 'edusystem')], 403);
+        }
+
+        // Recoge parámetros de $_POST (o $_REQUEST) y pásalos al método de datos
+        $args = [
+            'filter' => isset($_POST['filter']) ? wp_unslash($_POST['filter']) : null,
+            'custom' => isset($_POST['custom']) ? wp_unslash($_POST['custom']) : null,
+            'alliance_id' => isset($_POST['alliance_id']) ? (int) $_POST['alliance_id'] : null
+        ];
+
+        $data = $this->get_list_fee_alliance_data($args);
+
+        wp_send_json_success($data);
+    }
+
+    /**
+     * Obtains data on alliance payment rates/fees over a date range.
+     *
+     * @param string $start_date_str - Start date (any format, e.g. '10/22/2025').
+     * @param string $end_date_str - End date (any format).
+     * @param int|string $alliance_id_arg - The alliance ID to be consulted (must be sanitized/validated before passing).
+     * @return array ['total' => float, 'orders' => array]
+     */
+    protected function get_invoices_alliances($start_date_str, $end_date_str, $alliance_id_arg) {
+        global $wpdb;
+        $table_student_payments = $wpdb->prefix . 'student_payments';
+        $alliance_id = absint($alliance_id_arg);
+
+        if (empty($alliance_id)) {
+            return ['total' => 0.00, 'orders' => []];
+        }
+
+        $date_clause = '';
+        $prepare_args = [$alliance_id];
+
+        if (!empty($start_date_str) && !empty($end_date_str)) {
+            // Convert and sanitize input dates to MySQL format (YYYY-MM-DD)
+            $start_date = date('Y-m-d', strtotime(sanitize_text_field($start_date_str)));
+            $end_date = date('Y-m-d', strtotime(sanitize_text_field($end_date_str)));
+
+            $date_clause = " AND date_payment BETWEEN %s AND %s ";
+            $prepare_args[] = $start_date;
+            $prepare_args[] = $end_date;
+        }
+
+        $sql = "SELECT *
+            FROM {$table_student_payments}
+            WHERE status_id = 1
+            AND JSON_CONTAINS(`alliances`, JSON_OBJECT('id', %d))
+            {$date_clause}
+            ORDER BY date_payment DESC";
+
+        $payments = $wpdb->get_results($wpdb->prepare($sql, $prepare_args));
+
+        $data_fees = [];
+        $total = 0.00;
+
+        foreach ($payments as $payment) {
+            // Initialize the fee_amount
+            $fee_amount = 0.00;
+
+            foreach (json_decode($payment->alliances, true) as $alliance) {
+                if ((string) $alliance['id'] === (string) $alliance_id) {
+                    $fee_amount = (float) $alliance['calculated_fee_amount'];
+                    break;
+                }
+            }
+            // Cargar el objeto WC_Order
+            $order = wc_get_order( $payment->order_id );
+
+            if ($order) {
+                array_push($data_fees, [
+                    'order_id' => $order->get_id(),
+                    'customer' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+                    'fee' => $fee_amount,
+                    'created_at' => $payment->date_payment
+                ]);
+            }
+
+            $total += $fee_amount;
+        }
+
+        return ['total' => $total, 'orders' => $data_fees];
+    }
+
+    /**
+     * Calculates the date range (start and end) based on a predefined filter or a custom range.
+     *
+     * @param string $filter_key - Filter key ('today', 'this-month', 'custom', etc.).
+     * @param string $custom_date_range_str - Custom date range (e.g. '10/22/2025 to 11/22/2025').
+     * @return array Array with [start_date (Y-m-d), end_date (Y-m-d)]. Returns [false, false] on error.
+     */
+    protected function get_dates_search(string $filter_key, string $custom_date_range_str = '') {
+        $filter = sanitize_text_field($filter_key);
+        $custom = sanitize_text_field($custom_date_range_str);
+
+        $start = '';
+        $end = '';
+
+        // Output date format for the database (Year-Month-Day)
+        $output_date_format = 'm/d/Y';
+        $start_date = date($output_date_format, strtotime('today'));
+        $dt_start = DateTime::createFromFormat($output_date_format, $start_date);
+
+        try {
+            [$start_time, $end_time] = match ($filter) {
+                'today' => [$dt_start->getTimestamp(), $dt_start->getTimestamp()],
+                'yesterday' => [strtotime('-1 days'), strtotime('-1 days')],
+                'tomorrow' => [strtotime('+1 days'), strtotime('+1 days')],
+                // Weeks: Monday to Sunday.
+                'this-week' => [strtotime('this week monday'), strtotime('this week sunday')],
+                'last-week' => [strtotime('last week monday'), strtotime('last week sunday')],
+                // Months: First day to Last day.
+                'this-month' => [strtotime('first day of this month'), strtotime('last day of this month')],
+                'last-month' => [strtotime('first day of last month'), strtotime('last day of last month')],
+
+                'custom' => $this->handle_custom_date_range($custom),
+                // Default value if $filter does not match any key
+                default => [false, false],
+            };
+
+            // Final conversion to Y-m-d format
+            if ($start_time !== false && $end_time !== false) {
+                $start = wp_date($output_date_format, $start_time);
+                $end = wp_date($output_date_format, $end_time);
+            } else {
+                return [false, false];
+            }
+
+        } catch (Throwable $e) {
+            error_log(__("edusystem: Error calculating date range:", 'edusystem') . $e->getMessage());
+            return [false, false];
+        }
+
+        return [$start, $end];
+    }
+
+    /**
+     * Helper to handle custom date range logic (MM/DD/YYYY to MM/DD/YYYY).
+     *
+     * @param string $custom - Custom date range.
+     * @param string $output_date_format - Departure date format.
+     * @return array [timestamp_start, timestamp_end] or [false, false] in case of error.
+     */
+    protected function handle_custom_date_range(string $custom): array {
+        $custom_input_format = 'm/d/Y';
+        $date = str_replace([' to ', ' a '], ',', $custom);
+        $date_array = explode(',', $date);
+
+        $start_str = trim($date_array[0]);
+        $end_str = isset($date_array[1]) ? trim($date_array[1]) : $start_str;
+
+        // Parse the start date
+        $dt_start = DateTime::createFromFormat($custom_input_format, $start_str);
+
+        // Parse the end date
+        $dt_end = DateTime::createFromFormat($custom_input_format, $end_str);
+
+        if ($dt_start && $dt_end) {
+            // We return the timestamps. wp_date() will format them in the main method.
+            return [$dt_start->getTimestamp(), $dt_end->getTimestamp()];
+        }
+
+        return [false, false];
+    }
+
+    /**
+     * Obtiene las transacciones de pago para la alianza dentro de un rango de fechas y un estado específico.
+     * * @param string $start_date_str  Fecha de inicio (esperada en formato Y-m-d).
+     * @param string $end_date_str    Fecha de fin (esperada en formato Y-m-d).
+     * @param int|string $alliance_id_arg ID de la alianza a consultar.
+     * @param int $status_id_arg      ID del estado de la transacción (0 por defecto).
+     * @return array ['total' => float, 'transactions' => array]
+     */
+    protected function get_transactions_alliances($start_date_str, $end_date_str, $alliance_id_arg, $status_id_arg = 0) {
+        global $wpdb;
+        $table_alliances_payments = $wpdb->prefix . 'alliances_payments';
+
+        $alliance_id = absint($alliance_id_arg);
+        $status = absint($status_id_arg);
+
+        if (empty($alliance_id)) {
+            return ['total' => 0.00, 'orders' => []];
+        }
+
+        $start_datetime = date('Y-m-d 00:00:00', strtotime(sanitize_text_field($start_date_str)));
+        $end_datetime = date('Y-m-d 23:59:59', strtotime(sanitize_text_field($end_date_str)));
+
+        $sql = "SELECT * FROM {$table_alliances_payments}
+            WHERE alliance_id = %d
+            AND status_id = %d
+            AND created_at BETWEEN %s AND %s
+            ORDER BY created_at DESC";
+
+        $prepare_args = [
+            $alliance_id,
+            $status,
+            $start_datetime,
+            $end_datetime
+        ];
+
+        $transactions = $wpdb->get_results($wpdb->prepare($sql, $prepare_args));
+
+        $data_fees = [];
+        $total = 0.00;
+
+        foreach ($transactions as $transaction) {
+            $amount = (float) $transaction->amount;
+
+            array_push($data_fees, [
+                'status' => $this->get_name_payment_institute_status(absint($transaction->status_id)),
+                'month' => sanitize_text_field($transaction->month),
+                'amount' => $amount,
+                'total_orders' => absint($transaction->total_orders),
+                'created_at' => $transaction->created_at
+            ]);
+
+            $total += $amount;
+        }
+
+        return ['total' => $total, 'orders' => $data_fees];
+    }
+
+    /**
+     * Traduce el ID de estado de pago de instituto a una cadena legible y traducible.
+     * * @param int|string $status_id ID del estado (0 o cualquier otro).
+     * @return string Nombre del estado traducido.
+     */
+    public function get_name_payment_institute_status($status_id) {
+        $status_id = (string) $status_id;
+
+        $status = match ($status_id) {
+            '0' => esc_html__('Pending', 'edusystem'),
+            default => esc_html__('Paid', 'edusystem'),
+        };
+
+        return $status;
     }
 
     /**

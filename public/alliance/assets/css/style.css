@@ -127,4 +127,97 @@
   .edusystem-alliance-toolbar .edusystem-alliance-search-form input[type=search] {
     width: 100%;
   }
+}
+
+.edusystem-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 0;
+  margin-right: -0.75rem;
+  margin-left: -0.75rem;
+}
+.edusystem-row .edusystem-col-md-3 {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
+  padding-right: 0.5rem;
+  padding-left: 0.5rem;
+  margin-top: 0.5rem;
+}
+.edusystem-row .edusystem-col-md-3 .edusystem-card {
+  padding: 15px;
+  background-color: #343cf9;
+  color: #FFF;
+  opacity: 0.9;
+  border-radius: 8px;
+}
+.edusystem-row .edusystem-col-md-3 .edusystem-card .content-title .dashicons {
+  font-size: 2rem !important;
+  width: auto !important;
+  height: auto !important;
+}
+.edusystem-row .edusystem-col-md-3 .edusystem-card .content-title .dashicons:before {
+  vertical-align: initial !important;
+}
+.edusystem-row .edusystem-col-md-3 .edusystem-card .content-detail {
+  margin-bottom: 10px;
+  text-align: center;
+  font-size: 1.5rem;
+}
+@media (min-width: 768px) {
+  .edusystem-row .edusystem-col-md-3 {
+    flex: 0 0 auto;
+    width: 25%;
+  }
+}
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .edusystem-row .edusystem-col-md-3 {
+    flex: 0 0 auto;
+    width: 50%;
+  }
+}
+.edusystem-row .edusystem-col-md-4 {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
+  padding-right: 0.5rem;
+  padding-left: 0.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.edusystem-row .edusystem-col-md-4 .button-edusystem-alliance {
+  padding: 0.6180469716em 1em;
+  margin: 0;
+  display: inline-block;
+}
+.edusystem-row .edusystem-col-md-4 .edusystem-primary {
+  background: var(--primary-color) !important;
+  color: #fff !important;
+}
+@media (min-width: 768px) {
+  .edusystem-row .edusystem-col-md-4 {
+    flex: 0 0 auto;
+    width: 33.33333333%;
+  }
+}
+
+.invoice-filters {
+  margin: 1.5rem 0;
+  background: #f8f9fb;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.edusystem-w100-jcontent-c {
+  width: 100%;
+  justify-content: center;
+}
+
+#update_data[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
 }/*# sourceMappingURL=style.css.map */

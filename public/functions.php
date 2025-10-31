@@ -32,7 +32,6 @@ class Woocerti_Public {
         add_action('template_redirect', array($this, 'handle_requests'));
         // Handle AJAX request for single certificate form
         add_action('wp_ajax_woocerti_issue_single_certificate', array($this, 'handle_ajax_issue_certificate'));
-        add_action('wp_ajax_nopriv_woocerti_issue_single_certificate', array($this, 'handle_ajax_issue_certificate'));
         add_action('wp_ajax_woocerti_add_to_cart_checkout', array($this, 'woocerti_add_to_cart_checkout'));
         // Handle AJAX request for single certificate form
         add_action('wp_ajax_woocerti_delete_course_ajax', array($this, 'handle_ajax_delete_course'));
