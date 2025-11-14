@@ -92,6 +92,7 @@ class Alliance_Module {
                             'month' => __('Month', 'edusystem'),
                             'amount' => __('Amount', 'edusystem'),
                             'total_orders' => __('Total orders', 'edusystem'),
+                            'update_data' => __('Update data', 'edusystem')
                         ),
                         'wc_format_params' => array(
                             'currency_format_num_decimals' => absint(get_option('woocommerce_price_num_decimals', 2)),
@@ -203,13 +204,14 @@ class Alliance_Module {
         $search = "";
 
         if (isset($_GET['alliance_search']) && !empty($_GET['alliance_search'])) {
-            $search = $_GET['alliance_search'];
+            $search = '%' . $wpdb->esc_like(sanitize_text_field($_GET['alliance_search'])) . '%';
             // Query to get the total number of alliances (for pagination)
             $total_alliances = $wpdb->get_var($wpdb->prepare("
                 SELECT COUNT(*) FROM `$table_name`
                 WHERE alliance_id = %d
-                    AND (UPPER(name) LIKE UPPER('%{$search}%') || UPPER(email) LIKE UPPER('%{$search}%'))
-            ", $alliance_id));
+                    AND (UPPER(name) LIKE UPPER(%s) || UPPER(email) LIKE UPPER(%s))
+            ", $alliance_id, $search, $search));
+            $total_alliances = (int) $total_alliances;
             $total_pages = ceil($total_alliances / $posts_per_page);
 
             $results = $wpdb->get_results($wpdb->prepare("
@@ -218,16 +220,17 @@ class Alliance_Module {
                 FROM {$table_name}
                 WHERE
                     alliance_id = %d
-                    AND (UPPER(name) LIKE UPPER('%{$search}%') || UPPER(email) LIKE UPPER('%{$search}%'))
+                    AND (UPPER(name) LIKE UPPER(%s) || UPPER(email) LIKE UPPER(%s))
                 ORDER BY {$current_orderby} {$current_order}
                 LIMIT %d OFFSET %d
-            ", $alliance_id, $posts_per_page, $offset));
+            ", $alliance_id, $search, $search, $posts_per_page, $offset));
         } else {
             // Query to get the total number of alliances (for pagination)
             $total_alliances = $wpdb->get_var($wpdb->prepare("
                 SELECT COUNT(*) FROM `$table_name`
                 WHERE alliance_id = %d
             ", $alliance_id));
+            $total_alliances = (int) $total_alliances;
             $total_pages = ceil($total_alliances / $posts_per_page);
 
             $results = $wpdb->get_results($wpdb->prepare("
@@ -250,7 +253,7 @@ class Alliance_Module {
             'current_order' => $current_order,
             'posts_per_page' => $posts_per_page,
             'total_alliances' => $total_alliances,
-            'search_term' => $search,
+            'search_term' => $_GET['alliance_search'],
             'table_exist' => true
         );
 

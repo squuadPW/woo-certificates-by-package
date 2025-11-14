@@ -37,7 +37,6 @@
 <div class="edusystem-alliances-header">
     <h2><?php echo __('Listado de Alianzas Registradas', 'edusystem'); ?></h2>
 </div>
-<?php if (!empty($alliances) && empty($search_term)) { ?>
     <div class="edusystem-alliance-toolbar">
         <?php if ($table_exist && !empty($alliances)) { ?>
             <p class="woocommerce-result-count">
@@ -70,7 +69,6 @@
             ?>
         </form>
     </div>
-<?php } ?>
 
 <?php if (!$table_exist) : ?>
     <p class="woocommerce-info">

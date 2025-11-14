@@ -158,7 +158,7 @@ jQuery(document).ready(function($) {
                 console.error('AJAX Error:', error);
             },
             complete: function () {
-                btn.prop('disabled', false).text('Actualizar datos');
+                btn.prop('disabled', false).text(edusystem_alliance_data.messages.update_data);
             }
         });
     });

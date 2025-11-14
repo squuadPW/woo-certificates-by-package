@@ -123,7 +123,7 @@ if (!defined('ABSPATH')) {
                         <?= esc_html($order['status']); ?>
                     </td>
                     <td data-title="<?php echo esc_attr__('Month', 'edusystem'); ?>">
-                        <?= esc_html($order['month']); ?>
+                        <b><?= esc_html($order['month']); ?></b>
                     </td>
                     <td data-title="<?php echo esc_attr__('Amount', 'edusystem'); ?>">
                         <?= wc_price($order['amount']); ?>
